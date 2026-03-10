@@ -8,7 +8,7 @@ from pathlib import Path
 from .logging import EventLogger
 from .models import RunResult, ScoringContext, ValidationResult
 from .observer import RunObserver
-from .reporting import load_run_summaries, write_aggregate_outputs, write_run_outputs
+from .reporting import load_run_summaries, refresh_run_summaries, write_aggregate_outputs, write_run_outputs
 from .runners import DemoExecutor, ExternalProcessRunner, McpConditionRunner, MdConditionRunner
 from .scoring import ScoringEngine, load_allowed_scripts, load_rulebook
 from .task_loader import load_all_tasks, load_policy, load_task
@@ -215,6 +215,7 @@ def main() -> int:
 
     if args.command == 'compare':
         runs_dir = Path(args.runs_dir)
+        refresh_run_summaries(repo_root, runs_dir)
         write_aggregate_outputs(repo_root / 'benchmark' / 'reports' / 'aggregate', load_run_summaries(runs_dir))
         return 0
 
