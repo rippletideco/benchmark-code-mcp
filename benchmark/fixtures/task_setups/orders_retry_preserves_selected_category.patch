@@ -1,0 +1,12 @@
+diff --git a/web/src/features/orders/useOrdersController.ts b/web/src/features/orders/useOrdersController.ts
+--- a/web/src/features/orders/useOrdersController.ts
++++ b/web/src/features/orders/useOrdersController.ts
+@@ -61,7 +61,7 @@
+       }));
+     },
+     async retry() {
+-      await loadOrders(state.selectedCategory);
++      await loadOrders('All');
+     },
+     exportCurrent() {
+       setState((current) => ({

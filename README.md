@@ -95,7 +95,7 @@ The product app is intentionally realistic but compact:
 - shared validation in `web/src/lib/forms/`
 - colocated `*.test.tsx` files plus `*.benchmark.test.tsx` task validators
 
-The source tree stays green. Each benchmark task applies a regression patch in a temp workspace, then the harness runs the selected condition against that seeded breakage.
+The source tree stays green. Each benchmark task applies a regression patch in a temp workspace, then the harness runs the selected condition against that seeded breakage. The task suite now includes 24 auto-checkable scenarios spanning shell behavior, customers, dashboard, orders, settings, protected-file safety, and dirty-worktree preservation.
 
 ## Current Demo Behavior
 

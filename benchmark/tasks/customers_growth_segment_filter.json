@@ -1,0 +1,49 @@
+{
+  "task_id": "customers_growth_segment_filter",
+  "title": "Fix the customers Growth segment filter",
+  "prompt_file": "benchmark/prompts/customers_growth_segment_filter.md",
+  "setup_patch": "benchmark/fixtures/task_setups/customers_growth_segment_filter.patch",
+  "expected_files": [
+    "web/src/features/customers/CustomersPage.tsx",
+    "web/src/lib/api/customers.ts"
+  ],
+  "allowed_files": [
+    "web/src/features/customers/CustomersPage.tsx",
+    "web/src/features/customers/CustomersPage.module.css",
+    "web/src/features/customers/CustomersPage.test.tsx",
+    "web/src/features/customers/CustomersPage.benchmark.test.tsx",
+    "web/src/lib/api/customers.ts"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "customers-growth-filter-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/customers/CustomersPage.benchmark.test.tsx -t \"filters customers to the selected growth segment\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "customers-growth-filter-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 4,
+    "max_lines_changed": 90
+  }
+}
+

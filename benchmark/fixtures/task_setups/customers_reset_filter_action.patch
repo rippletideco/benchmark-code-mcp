@@ -1,0 +1,12 @@
+diff --git a/web/src/features/customers/CustomersPage.tsx b/web/src/features/customers/CustomersPage.tsx
+--- a/web/src/features/customers/CustomersPage.tsx
++++ b/web/src/features/customers/CustomersPage.tsx
+@@ -61,7 +61,7 @@
+           actionLabel="Reset filter"
+           body="No customers match the selected segment right now."
+           eyebrow="Customer view"
+-          onAction={() => setSegment('All')}
++          onAction={() => undefined}
+           title="No accounts in this segment"
+         />
+       ) : null}

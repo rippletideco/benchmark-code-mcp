@@ -1,0 +1,47 @@
+{
+  "task_id": "settings_success_clears_error",
+  "title": "Clear the previous invite error after success",
+  "prompt_file": "benchmark/prompts/settings_success_clears_error.md",
+  "setup_patch": "benchmark/fixtures/task_setups/settings_success_clears_error.patch",
+  "expected_files": [
+    "web/src/features/settings/SettingsPage.tsx"
+  ],
+  "allowed_files": [
+    "web/src/features/settings/SettingsPage.tsx",
+    "web/src/features/settings/SettingsPage.module.css",
+    "web/src/features/settings/SettingsPage.test.tsx",
+    "web/src/features/settings/SettingsPage.benchmark.test.tsx"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "settings-clear-error-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/settings/SettingsPage.benchmark.test.tsx -t \"clears the previous validation error after a successful invite\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "settings-clear-error-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 3,
+    "max_lines_changed": 70
+  }
+}
+

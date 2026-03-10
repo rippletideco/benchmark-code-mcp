@@ -1,0 +1,12 @@
+diff --git a/web/src/features/dashboard/DashboardPage.tsx b/web/src/features/dashboard/DashboardPage.tsx
+--- a/web/src/features/dashboard/DashboardPage.tsx
++++ b/web/src/features/dashboard/DashboardPage.tsx
+@@ -26,8 +26,6 @@
+         <StatCard label="Needs attention" value={String(delayedOrders)} footnote="Delayed and at-risk orders on the floor today." />
+       </div>
+ 
+-      {loading ? <InlineNotice>Loading operating preferences…</InlineNotice> : null}
+-
+       {settings?.lowStockAlerts ? (
+         <Card>
+           <h3 className={styles.alertTitle}>Low-stock alert rail is active</h3>

@@ -1,0 +1,12 @@
+diff --git a/web/src/features/orders/OrdersPage.tsx b/web/src/features/orders/OrdersPage.tsx
+--- a/web/src/features/orders/OrdersPage.tsx
++++ b/web/src/features/orders/OrdersPage.tsx
+@@ -39,7 +39,7 @@
+       {state.status === 'error' ? (
+         <Card>
+           <InlineNotice tone="error">{state.errorMessage}</InlineNotice>
+-          <Button onClick={() => void retry()} variant="secondary">Retry orders</Button>
++          <p>Retry unavailable</p>
+         </Card>
+       ) : null}
+       {state.status === 'ready' ? (

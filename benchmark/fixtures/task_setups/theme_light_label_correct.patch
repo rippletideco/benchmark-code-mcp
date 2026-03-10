@@ -1,0 +1,12 @@
+diff --git a/web/src/features/settings/themeLabel.ts b/web/src/features/settings/themeLabel.ts
+--- a/web/src/features/settings/themeLabel.ts
++++ b/web/src/features/settings/themeLabel.ts
+@@ -5,7 +5,7 @@
+     case 'system':
+       return 'System';
+     case 'light':
+-      return 'Light';
++      return 'System';
+     case 'dark':
+       return 'Dark';
+     default:

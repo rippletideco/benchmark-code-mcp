@@ -1,0 +1,13 @@
+diff --git a/web/src/lib/api/customers.ts b/web/src/lib/api/customers.ts
+--- a/web/src/lib/api/customers.ts
++++ b/web/src/lib/api/customers.ts
+@@ -3,8 +3,6 @@
+ import { baseCustomers } from './seed';
+ 
+ export async function listCustomers(segment?: CustomerSegment | 'All'): Promise<Customer[]> {
+-  const customers = segment && segment !== 'All'
+-    ? baseCustomers.filter((customer) => customer.segment === segment)
+-    : baseCustomers;
++  const customers = baseCustomers;
+   return deliverClone(customers);
+ }

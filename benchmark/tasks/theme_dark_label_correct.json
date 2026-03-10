@@ -1,0 +1,46 @@
+{
+  "task_id": "theme_dark_label_correct",
+  "title": "Fix the dark theme label",
+  "prompt_file": "benchmark/prompts/theme_dark_label_correct.md",
+  "setup_patch": "benchmark/fixtures/task_setups/theme_dark_label_correct.patch",
+  "expected_files": [
+    "web/src/features/settings/themeLabel.ts"
+  ],
+  "allowed_files": [
+    "web/src/features/settings/themeLabel.ts",
+    "web/src/features/settings/SettingsPage.tsx",
+    "web/src/features/settings/SettingsPage.test.tsx",
+    "web/src/features/settings/SettingsPage.benchmark.test.tsx"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "theme-dark-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/settings/SettingsPage.benchmark.test.tsx -t \"shows the correct theme label for dark mode\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "theme-dark-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 3,
+    "max_lines_changed": 60
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "task_id": "settings_invalid_email_format",
+  "title": "Reject invalid invite email formats",
+  "prompt_file": "benchmark/prompts/settings_invalid_email_format.md",
+  "setup_patch": "benchmark/fixtures/task_setups/settings_invalid_email_format.patch",
+  "expected_files": [
+    "web/src/lib/forms/validators.ts",
+    "web/src/features/settings/SettingsPage.tsx"
+  ],
+  "allowed_files": [
+    "web/src/lib/forms/validators.ts",
+    "web/src/features/settings/SettingsPage.tsx",
+    "web/src/features/settings/SettingsPage.module.css",
+    "web/src/features/settings/SettingsPage.test.tsx",
+    "web/src/features/settings/SettingsPage.benchmark.test.tsx"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "settings-invalid-email-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/settings/SettingsPage.benchmark.test.tsx -t \"rejects invalid email formats with the shared validation helper\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "settings-invalid-email-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 4,
+    "max_lines_changed": 90
+  }
+}
+

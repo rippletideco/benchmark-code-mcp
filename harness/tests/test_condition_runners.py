@@ -28,7 +28,7 @@ def test_md_runner_loads_the_provided_markdown_bundle() -> None:
     bundle = request.instruction_payload['instruction_bundle']
     assert bundle
     assert all(item['path'].endswith('.md') for item in bundle)
-    assert any('Project Context' in item['content'] for item in bundle)
+    assert any('Verify before finishing.' in item['content'] for item in bundle)
 
 
 def test_mcp_runner_detects_a_generic_server_config_file() -> None:

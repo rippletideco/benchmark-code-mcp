@@ -1,0 +1,20 @@
+diff --git a/web/src/features/orders/useOrdersController.ts b/web/src/features/orders/useOrdersController.ts
+--- a/web/src/features/orders/useOrdersController.ts
++++ b/web/src/features/orders/useOrdersController.ts
+@@ -2,6 +2,7 @@
+ import type { Order, OrderCategory } from '../../types/models';
+ import { listOrders } from '../../lib/api/orders';
+ import { exportOrdersCsv } from './exportOrdersCsv';
++import { baseOrders } from '../../lib/api/seed';
+ 
+ export interface OrdersControllerState {
+   status: 'loading' | 'ready' | 'error';
+@@ -66,7 +67,7 @@
+     exportCurrent() {
+       setState((current) => ({
+         ...current,
+-        exportedCsv: exportOrdersCsv(current.orders),
++        exportedCsv: exportOrdersCsv(baseOrders),
+       }));
+     },
+   };

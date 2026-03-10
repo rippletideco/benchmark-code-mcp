@@ -1,0 +1,12 @@
+diff --git a/web/src/features/customers/CustomersPage.tsx b/web/src/features/customers/CustomersPage.tsx
+--- a/web/src/features/customers/CustomersPage.tsx
++++ b/web/src/features/customers/CustomersPage.tsx
+@@ -54,8 +54,6 @@
+         />
+       </div>
+ 
+-      {loading ? <InlineNotice>Loading customers…</InlineNotice> : null}
+-
+       {!loading && customers.length === 0 ? (
+         <PageEmptyState
+           actionLabel="Reset filter"

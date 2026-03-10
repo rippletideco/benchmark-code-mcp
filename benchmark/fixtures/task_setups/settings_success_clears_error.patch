@@ -1,0 +1,11 @@
+diff --git a/web/src/features/settings/SettingsPage.tsx b/web/src/features/settings/SettingsPage.tsx
+--- a/web/src/features/settings/SettingsPage.tsx
++++ b/web/src/features/settings/SettingsPage.tsx
+@@ -24,7 +24,6 @@
+       return;
+     }
+ 
+-    setFormError(null);
+     setSuccessMessage(`Invite queued for ${inviteEmail.trim()}.`);
+     setInviteEmail('');
+   }

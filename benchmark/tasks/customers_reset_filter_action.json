@@ -1,0 +1,48 @@
+{
+  "task_id": "customers_reset_filter_action",
+  "title": "Reset the customers filter from the empty state action",
+  "prompt_file": "benchmark/prompts/customers_reset_filter_action.md",
+  "setup_patch": "benchmark/fixtures/task_setups/customers_reset_filter_action.patch",
+  "expected_files": [
+    "web/src/features/customers/CustomersPage.tsx"
+  ],
+  "allowed_files": [
+    "web/src/features/customers/CustomersPage.tsx",
+    "web/src/features/customers/CustomersPage.module.css",
+    "web/src/features/customers/CustomersPage.test.tsx",
+    "web/src/features/customers/CustomersPage.benchmark.test.tsx",
+    "web/src/components/ui/PageEmptyState.tsx"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "customers-reset-filter-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/customers/CustomersPage.benchmark.test.tsx -t \"resets the customer segment filter from the empty state action\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "customers-reset-filter-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 4,
+    "max_lines_changed": 90
+  }
+}
+

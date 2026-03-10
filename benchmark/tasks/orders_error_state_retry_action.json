@@ -1,0 +1,47 @@
+{
+  "task_id": "orders_error_state_retry_action",
+  "title": "Keep the retry action visible in the orders error state",
+  "prompt_file": "benchmark/prompts/orders_error_state_retry_action.md",
+  "setup_patch": "benchmark/fixtures/task_setups/orders_error_state_retry_action.patch",
+  "expected_files": [
+    "web/src/features/orders/OrdersPage.tsx"
+  ],
+  "allowed_files": [
+    "web/src/features/orders/OrdersPage.tsx",
+    "web/src/features/orders/OrdersPage.module.css",
+    "web/src/features/orders/OrdersPage.test.tsx",
+    "web/src/features/orders/OrdersPage.benchmark.test.tsx"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "orders-error-retry-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/orders/OrdersPage.benchmark.test.tsx -t \"shows the retry action in the error state\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "orders-error-retry-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 3,
+    "max_lines_changed": 70
+  }
+}
+

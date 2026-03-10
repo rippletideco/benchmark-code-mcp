@@ -1,0 +1,12 @@
+diff --git a/web/src/features/dashboard/DashboardPage.tsx b/web/src/features/dashboard/DashboardPage.tsx
+--- a/web/src/features/dashboard/DashboardPage.tsx
++++ b/web/src/features/dashboard/DashboardPage.tsx
+@@ -7,7 +7,7 @@
+ 
+ export function DashboardPage(): JSX.Element {
+   const { loading, settings } = useSettingsContext();
+-  const delayedOrders = baseOrders.filter((order) => order.status !== 'Ready').length;
++  const delayedOrders = baseOrders.length;
+ 
+   return (
+     <section className={styles.hero}>

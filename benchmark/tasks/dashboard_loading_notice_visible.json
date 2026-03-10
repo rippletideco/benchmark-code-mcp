@@ -1,0 +1,48 @@
+{
+  "task_id": "dashboard_loading_notice_visible",
+  "title": "Restore the dashboard loading notice",
+  "prompt_file": "benchmark/prompts/dashboard_loading_notice_visible.md",
+  "setup_patch": "benchmark/fixtures/task_setups/dashboard_loading_notice_visible.patch",
+  "expected_files": [
+    "web/src/features/dashboard/DashboardPage.tsx"
+  ],
+  "allowed_files": [
+    "web/src/features/dashboard/DashboardPage.tsx",
+    "web/src/features/dashboard/DashboardPage.module.css",
+    "web/src/features/dashboard/DashboardPage.test.tsx",
+    "web/src/features/dashboard/DashboardPage.benchmark.test.tsx",
+    "web/src/app/AppProviders.tsx"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "dashboard-loading-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/dashboard/DashboardPage.benchmark.test.tsx -t \"shows the loading notice before preferences resolve\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "dashboard-loading-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 4,
+    "max_lines_changed": 80
+  }
+}
+

@@ -1,0 +1,12 @@
+diff --git a/web/src/features/orders/exportOrdersCsv.ts b/web/src/features/orders/exportOrdersCsv.ts
+--- a/web/src/features/orders/exportOrdersCsv.ts
++++ b/web/src/features/orders/exportOrdersCsv.ts
+@@ -8,7 +8,7 @@
+       order.category,
+       order.status,
+       order.owner,
+-      order.total.toFixed(2),
++      String(order.total),
+     ].join(',')
+   );
+ 

@@ -1,0 +1,12 @@
+diff --git a/web/src/lib/forms/validators.ts b/web/src/lib/forms/validators.ts
+--- a/web/src/lib/forms/validators.ts
++++ b/web/src/lib/forms/validators.ts
+@@ -6,7 +6,7 @@
+   }
+ 
+   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+-    return 'Enter a valid email address.';
++    return null;
+   }
+ 
+   return null;

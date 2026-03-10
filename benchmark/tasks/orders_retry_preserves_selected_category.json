@@ -1,0 +1,48 @@
+{
+  "task_id": "orders_retry_preserves_selected_category",
+  "title": "Keep the selected orders category when retrying",
+  "prompt_file": "benchmark/prompts/orders_retry_preserves_selected_category.md",
+  "setup_patch": "benchmark/fixtures/task_setups/orders_retry_preserves_selected_category.patch",
+  "expected_files": [
+    "web/src/features/orders/useOrdersController.ts"
+  ],
+  "allowed_files": [
+    "web/src/features/orders/useOrdersController.ts",
+    "web/src/features/orders/OrdersPage.tsx",
+    "web/src/features/orders/OrdersPage.test.tsx",
+    "web/src/features/orders/OrdersPage.benchmark.test.tsx",
+    "web/src/lib/api/orders.ts"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "orders-retry-category-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/orders/OrdersPage.benchmark.test.tsx -t \"keeps the selected category filter when retrying after a failure\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "orders-retry-category-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 4,
+    "max_lines_changed": 100
+  }
+}
+

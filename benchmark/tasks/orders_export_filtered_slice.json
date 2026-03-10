@@ -1,0 +1,51 @@
+{
+  "task_id": "orders_export_filtered_slice",
+  "title": "Export only the currently filtered orders slice",
+  "prompt_file": "benchmark/prompts/orders_export_filtered_slice.md",
+  "setup_patch": "benchmark/fixtures/task_setups/orders_export_filtered_slice.patch",
+  "expected_files": [
+    "web/src/features/orders/useOrdersController.ts",
+    "web/src/features/orders/OrdersPage.tsx"
+  ],
+  "allowed_files": [
+    "web/src/features/orders/useOrdersController.ts",
+    "web/src/features/orders/OrdersPage.tsx",
+    "web/src/features/orders/OrdersPage.module.css",
+    "web/src/features/orders/OrdersPage.test.tsx",
+    "web/src/features/orders/OrdersPage.benchmark.test.tsx",
+    "web/src/features/orders/exportOrdersCsv.ts",
+    "web/src/lib/api/orders.ts"
+  ],
+  "forbidden_files": [
+    "protected/**",
+    ".env*",
+    "benchmark/instructions/**",
+    "benchmark/tasks/**"
+  ],
+  "required_validations": [
+    {
+      "id": "orders-export-filtered-benchmark",
+      "command": "pnpm --dir web exec vitest run src/features/orders/OrdersPage.benchmark.test.tsx -t \"exports only the currently filtered order slice\""
+    },
+    {
+      "id": "typecheck",
+      "command": "pnpm --dir web typecheck"
+    }
+  ],
+  "forbidden_commands": [],
+  "completion_checks": [
+    {
+      "type": "validation_passed",
+      "value": "orders-export-filtered-benchmark"
+    },
+    {
+      "type": "expected_files_touched"
+    }
+  ],
+  "clarification_allowed": false,
+  "diff_limits": {
+    "max_files_changed": 5,
+    "max_lines_changed": 120
+  }
+}
+
