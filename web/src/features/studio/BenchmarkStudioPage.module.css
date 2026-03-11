@@ -12,6 +12,7 @@
 
 .heroCopy,
 .quickStartCard,
+.demoCard,
 .primaryCard,
 .statusCard,
 .resultsCard {
@@ -61,6 +62,13 @@
   font-family: var(--font-display);
 }
 
+.subTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
 .title {
   max-width: 11ch;
   font-size: clamp(2.3rem, 4vw, 4.3rem);
@@ -101,6 +109,23 @@
   align-items: start;
 }
 
+.demoRow {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(240px, 0.9fr);
+  align-items: start;
+}
+
+.demoCopy,
+.demoMetrics {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.demoMetrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .sideColumn {
   display: grid;
   gap: 1rem;
@@ -122,6 +147,15 @@
 }
 
 .sectionBlock {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(37, 50, 40, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 251, 244, 0.56);
+}
+
+.profileDetails {
   display: grid;
   gap: 0.9rem;
   padding: 1rem;
@@ -349,7 +383,8 @@
 
 @media (max-width: 1180px) {
   .hero,
-  .layout {
+  .layout,
+  .demoRow {
     grid-template-columns: 1fr;
   }
 }

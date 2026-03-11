@@ -1,0 +1,17 @@
+{
+  "profile_id": null,
+  "profile_name": null,
+  "repo_path": "/private/var/folders/1z/jlh723cx58nbj81d9h354s3h0000gn/T/pytest-of-guillaume_deramchi/pytest-37/test_server_creates_run_and_ex0/api-sample-repo",
+  "runner_kind": "demo",
+  "agent_backend": "codex",
+  "adapter_command": null,
+  "instruction_sources": [
+    {
+      "type": "upload",
+      "origin": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/benchmark/reports/studio_runs/f6273006e681/instructions/AGENTS.md",
+      "label": "AGENTS.md"
+    }
+  ],
+  "mcp_source_type": "inline",
+  "mcp_source_origin": "inline"
+}

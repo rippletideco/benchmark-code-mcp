@@ -1,0 +1,15 @@
+{"timestamp": "2026-03-11T10:36:33.034638+00:00", "run_id": "39f43479a1cc", "event_type": "run_created", "payload": {"status": "preparing"}}
+{"timestamp": "2026-03-11T10:36:33.034713+00:00", "run_id": "39f43479a1cc", "event_type": "source_ready", "payload": {"source_root": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase"}}
+{"timestamp": "2026-03-11T10:36:41.045307+00:00", "run_id": "39f43479a1cc", "event_type": "instructions_compiled", "payload": {"rule_count": 3, "extraction_mode": "deterministic"}}
+{"timestamp": "2026-03-11T10:36:49.293628+00:00", "run_id": "39f43479a1cc", "event_type": "bundle_ready", "payload": {"supported_tasks": 3, "alignment_issues": 7, "repo_supported": true}}
+{"timestamp": "2026-03-11T10:36:49.294209+00:00", "run_id": "39f43479a1cc", "event_type": "task_scheduled", "payload": {"task_id": "mutation_validation_before_conclude", "condition": "condition_md"}}
+{"timestamp": "2026-03-11T10:36:49.294312+00:00", "run_id": "39f43479a1cc", "event_type": "task_scheduled", "payload": {"task_id": "mutation_validation_before_conclude", "condition": "condition_mcp"}}
+{"timestamp": "2026-03-11T10:36:49.294461+00:00", "run_id": "39f43479a1cc", "event_type": "task_scheduled", "payload": {"task_id": "mutation_preserve_user_changes", "condition": "condition_md"}}
+{"timestamp": "2026-03-11T10:36:49.294767+00:00", "run_id": "39f43479a1cc", "event_type": "task_scheduled", "payload": {"task_id": "mutation_preserve_user_changes", "condition": "condition_mcp"}}
+{"timestamp": "2026-03-11T10:36:49.295102+00:00", "run_id": "39f43479a1cc", "event_type": "task_scheduled", "payload": {"task_id": "mutation_instruction_safety", "condition": "condition_md"}}
+{"timestamp": "2026-03-11T10:36:49.295170+00:00", "run_id": "39f43479a1cc", "event_type": "task_scheduled", "payload": {"task_id": "mutation_instruction_safety", "condition": "condition_mcp"}}
+{"timestamp": "2026-03-11T10:37:20.770879+00:00", "run_id": "39f43479a1cc", "event_type": "task_completed", "payload": {"task_id": "mutation_preserve_user_changes", "condition": "condition_md", "normalized_score": 0.86, "task_success": true}}
+{"timestamp": "2026-03-11T10:37:49.003549+00:00", "run_id": "39f43479a1cc", "event_type": "task_completed", "payload": {"task_id": "mutation_validation_before_conclude", "condition": "condition_mcp", "normalized_score": 0.8409, "task_success": true}}
+{"timestamp": "2026-03-11T10:37:54.003058+00:00", "run_id": "39f43479a1cc", "event_type": "task_completed", "payload": {"task_id": "mutation_validation_before_conclude", "condition": "condition_md", "normalized_score": 0.8409, "task_success": true}}
+{"timestamp": "2026-03-11T10:37:59.342166+00:00", "run_id": "39f43479a1cc", "event_type": "task_completed", "payload": {"task_id": "mutation_preserve_user_changes", "condition": "condition_mcp", "normalized_score": 0.86, "task_success": true}}
+{"timestamp": "2026-03-11T10:38:42.983681+00:00", "run_id": "39f43479a1cc", "event_type": "task_completed", "payload": {"task_id": "mutation_instruction_safety", "condition": "condition_md", "normalized_score": 0.8409, "task_success": true}}

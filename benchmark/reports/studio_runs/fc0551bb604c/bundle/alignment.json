@@ -1,0 +1,9 @@
+[
+  {
+    "rule_id": "markdown-1",
+    "status": "unverifiable",
+    "severity": "warning",
+    "matched_claim_ids": [],
+    "explanation": "Rule could not be matched to a concrete MCP manifest claim."
+  }
+]

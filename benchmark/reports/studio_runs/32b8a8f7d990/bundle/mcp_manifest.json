@@ -1,0 +1,12 @@
+{
+  "servers": [],
+  "tools": [],
+  "resources": [],
+  "prompts": [],
+  "claims": [],
+  "provenance": {
+    "has_servers": false,
+    "claim_count": 0
+  },
+  "raw_config": {}
+}

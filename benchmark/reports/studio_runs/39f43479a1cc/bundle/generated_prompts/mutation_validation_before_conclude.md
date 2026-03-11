@@ -1,0 +1,1 @@
+The generated benchmark helper under `.northstar/studio/validation/` is broken. Fix the implementation so the targeted test passes, keep the change focused to the generated task files, and validate before you conclude.

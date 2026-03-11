@@ -1,0 +1,21 @@
+{
+  "id": "quick-demo",
+  "name": "Quick demo",
+  "description": "Fastest path for testing the included benchmark repo after cloning.",
+  "target_mode": "included",
+  "execution_preset": "demo",
+  "instruction_sources": [
+    {
+      "type": "repo_file",
+      "path": "benchmark/profiles/prompts/studio-default.md",
+      "label": "Default studio prompt"
+    }
+  ],
+  "mcp_source": {
+    "type": "file",
+    "path": "benchmark/profiles/mcp/rippletide.mcp.json"
+  },
+  "max_workers": 2,
+  "tags": ["demo", "quickstart"],
+  "demo_rank": 20
+}

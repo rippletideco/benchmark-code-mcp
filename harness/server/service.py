@@ -16,6 +16,21 @@ from ..alignment import McpManifestCompiler, RuleAlignmentEngine
 from ..compiler.instruction_compiler import InstructionCompiler, load_prompt_sources
 from ..engine import execute_task_matrix
 from ..logging import utc_now_iso
+from ..profiles import (
+    BenchmarkProfile,
+    InstructionSourceConfig,
+    McpSourceConfig,
+    build_command_mcp_source,
+    build_file_mcp_source,
+    build_inline_mcp_source,
+    build_profile_payload,
+    execution_preset_to_runtime,
+    list_profiles,
+    load_profile,
+    profiles_jsonable,
+    resolve_instruction_sources,
+    resolve_mcp_source,
+)
 from ..studio import build_dynamic_bundle, probe_repo_capabilities
 from ..studio_models import DynamicRunBundle, studio_jsonable
 
@@ -47,10 +62,14 @@ class StudioRunManager:
     def create_run(
         self,
         *,
+        profile_id: str | None,
         repo_path: str | None,
         repo_archive: UploadFile | None,
         instruction_files: list[UploadFile],
         mcp_json: str,
+        mcp_source_type: str | None,
+        mcp_source_path: str | None,
+        mcp_source_command: str | None,
         runner_kind: str,
         agent_backend: str,
         adapter_command: str | None,
@@ -81,10 +100,14 @@ class StudioRunManager:
             target=self._run_job,
             kwargs={
                 'state': state,
+                'profile_id': profile_id,
                 'repo_path': repo_path,
                 'repo_archive': archive_blob,
                 'instruction_files': instruction_blobs,
                 'mcp_json': mcp_json,
+                'mcp_source_type': mcp_source_type,
+                'mcp_source_path': mcp_source_path,
+                'mcp_source_command': mcp_source_command,
                 'runner_kind': runner_kind,
                 'agent_backend': agent_backend,
                 'adapter_command': adapter_command,
@@ -99,36 +122,72 @@ class StudioRunManager:
 
     def get_state(self, run_id: str) -> StudioRunState | None:
         with self._lock:
-            return self._states.get(run_id)
+            state = self._states.get(run_id)
+            if state is not None:
+                return state
+
+        run_root = self.runs_root / run_id
+        state_path = run_root / 'state.json'
+        if not run_root.exists() or not state_path.exists():
+            return None
+
+        payload = json.loads(state_path.read_text())
+        state = StudioRunState(
+            run_id=run_id,
+            root=run_root,
+            status=payload.get('status', 'completed'),
+            error=payload.get('error'),
+            summary=payload.get('summary') or {},
+        )
+        with self._lock:
+            self._states[run_id] = state
+        return state
 
     def _run_job(
         self,
         *,
         state: StudioRunState,
+        profile_id: str | None,
         repo_path: str | None,
         repo_archive: UploadedBlob | None,
         instruction_files: list[UploadedBlob],
         mcp_json: str,
+        mcp_source_type: str | None,
+        mcp_source_path: str | None,
+        mcp_source_command: str | None,
         runner_kind: str,
         agent_backend: str,
         adapter_command: str | None,
         max_workers: int,
     ) -> None:
         try:
+            profile = load_profile(self.benchmark_root, profile_id) if profile_id else None
+            resolved_runner_kind, resolved_agent_backend = self._resolve_runtime(
+                profile, runner_kind, agent_backend
+            )
             resolved_adapter_command = adapter_command
-            if runner_kind == 'external' and not resolved_adapter_command:
+            if resolved_runner_kind == 'external' and not resolved_adapter_command:
                 resolved_adapter_command = resolve_external_adapter_command(
                     benchmark_root=self.benchmark_root,
-                    agent_backend=agent_backend,
+                    agent_backend=resolved_agent_backend,
                     adapter_command=adapter_command,
                 )
 
             self._set_status(state, 'preparing')
-            source_root = self._resolve_source_root(state.root, repo_path, repo_archive)
+            source_root = self._resolve_source_root(
+                state.root,
+                repo_path,
+                repo_archive,
+                profile.default_repo_path if profile is not None else None,
+            )
             self._append_event(state, 'source_ready', {'source_root': str(source_root)})
 
-            prompt_paths = self._materialize_instruction_files(state.root, source_root, instruction_files)
-            prompt_sources = load_prompt_sources(prompt_paths)
+            prompt_sources, instruction_metadata = self._resolve_instruction_sources(
+                state.root,
+                source_root,
+                instruction_files,
+                profile,
+            )
             compiled = InstructionCompiler().compile(prompt_sources, self.benchmark_root)
             self._append_event(
                 state,
@@ -136,19 +195,30 @@ class StudioRunManager:
                 {'rule_count': len(compiled.rules), 'extraction_mode': compiled.extraction_mode},
             )
 
-            raw_mcp = json.loads(mcp_json) if mcp_json.strip() else {}
-            manifest = McpManifestCompiler().compile(raw_mcp)
+            resolved_mcp_source = self._resolve_mcp_source(
+                profile=profile,
+                source_root=source_root,
+                mcp_json=mcp_json,
+                mcp_source_type=mcp_source_type,
+                mcp_source_path=mcp_source_path,
+                mcp_source_command=mcp_source_command,
+            )
+            manifest = McpManifestCompiler().compile(resolved_mcp_source.raw_config)
             alignment = RuleAlignmentEngine().align(compiled, manifest)
             capabilities = probe_repo_capabilities(source_root)
             bundle = build_dynamic_bundle(
                 bundle_root=state.root / 'bundle',
                 source_root=source_root,
                 inputs={
+                    'profile_id': profile.id if profile is not None else None,
+                    'profile_name': profile.name if profile is not None else None,
                     'repo_path': str(source_root),
-                    'runner_kind': runner_kind,
-                    'agent_backend': agent_backend,
+                    'runner_kind': resolved_runner_kind,
+                    'agent_backend': resolved_agent_backend,
                     'adapter_command': resolved_adapter_command,
-                    'instruction_files': [path.name for path in prompt_paths],
+                    'instruction_sources': instruction_metadata,
+                    'mcp_source_type': resolved_mcp_source.type,
+                    'mcp_source_origin': resolved_mcp_source.provenance.get('origin'),
                 },
                 compiled_instructions=compiled,
                 mcp_manifest=manifest,
@@ -196,7 +266,7 @@ class StudioRunManager:
                             'task': generated.task,
                             'condition': 'condition_md',
                             'instruction_payload': md_payload,
-                            'runner_kind': runner_kind,
+                            'runner_kind': resolved_runner_kind,
                             'adapter_command': resolved_adapter_command,
                             'output_dir': state.root / 'runs' / f'{generated.task.task_id}-condition_md',
                             'protected_globs': generated.task.forbidden_files,
@@ -206,7 +276,7 @@ class StudioRunManager:
                             'task': generated.task,
                             'condition': 'condition_mcp',
                             'instruction_payload': mcp_payload,
-                            'runner_kind': runner_kind,
+                            'runner_kind': resolved_runner_kind,
                             'adapter_command': resolved_adapter_command,
                             'output_dir': state.root / 'runs' / f'{generated.task.task_id}-condition_mcp',
                             'protected_globs': generated.task.forbidden_files,
@@ -236,11 +306,18 @@ class StudioRunManager:
         run_root: Path,
         repo_path: str | None,
         repo_archive: UploadedBlob | None,
+        default_repo_path: str | None,
     ) -> Path:
         if repo_path:
             candidate = Path(repo_path).expanduser().resolve()
             if not candidate.exists():
                 raise FileNotFoundError(f'Repository path does not exist: {candidate}')
+            return candidate
+
+        if default_repo_path:
+            candidate = Path(default_repo_path).expanduser().resolve()
+            if not candidate.exists():
+                raise FileNotFoundError(f'Default repository path does not exist: {candidate}')
             return candidate
 
         if repo_archive is None:
@@ -289,6 +366,86 @@ class StudioRunManager:
             fallback.write_text('Validate before concluding. Make the smallest safe change. Explore before editing.\n')
             materialized.append(fallback)
         return materialized
+
+    def _resolve_instruction_sources(
+        self,
+        run_root: Path,
+        source_root: Path,
+        instruction_files: list[UploadedBlob],
+        profile: BenchmarkProfile | None,
+    ) -> tuple[list, list[dict[str, Any]]]:
+        if instruction_files:
+            paths = self._materialize_instruction_files(run_root, source_root, instruction_files)
+            return load_prompt_sources(paths), [
+                {'type': 'upload', 'origin': str(path), 'label': path.name} for path in paths
+            ]
+
+        if profile is not None and profile.instruction_sources:
+            return resolve_instruction_sources(profile.instruction_sources, benchmark_root=self.benchmark_root)
+
+        paths = self._materialize_instruction_files(run_root, source_root, [])
+        return load_prompt_sources(paths), [
+            {'type': 'auto', 'origin': str(path), 'label': path.name} for path in paths
+        ]
+
+    def _resolve_mcp_source(
+        self,
+        *,
+        profile: BenchmarkProfile | None,
+        source_root: Path,
+        mcp_json: str,
+        mcp_source_type: str | None,
+        mcp_source_path: str | None,
+        mcp_source_command: str | None,
+    ):
+        if mcp_source_type:
+            source = self._build_mcp_source_from_request(
+                mcp_json=mcp_json,
+                mcp_source_type=mcp_source_type,
+                mcp_source_path=mcp_source_path,
+                mcp_source_command=mcp_source_command,
+            )
+        elif profile is not None:
+            source = profile.mcp_source
+        else:
+            source = build_inline_mcp_source(mcp_json)
+
+        return resolve_mcp_source(
+            source,
+            benchmark_root=self.benchmark_root,
+            source_root=source_root,
+        )
+
+    def _build_mcp_source_from_request(
+        self,
+        *,
+        mcp_json: str,
+        mcp_source_type: str,
+        mcp_source_path: str | None,
+        mcp_source_command: str | None,
+    ) -> McpSourceConfig:
+        if mcp_source_type == 'file':
+            if not mcp_source_path:
+                raise ValueError('MCP source path is required for `file` mode.')
+            return build_file_mcp_source(mcp_source_path)
+        if mcp_source_type == 'command':
+            if not mcp_source_command:
+                raise ValueError('MCP source command is required for `command` mode.')
+            return build_command_mcp_source(mcp_source_command)
+        return build_inline_mcp_source(mcp_json)
+
+    def _resolve_runtime(
+        self,
+        profile: BenchmarkProfile | None,
+        runner_kind: str,
+        agent_backend: str,
+    ) -> tuple[str, str]:
+        if profile is None:
+            return runner_kind, agent_backend
+        resolved_runner_kind, resolved_agent_backend = execution_preset_to_runtime(
+            profile.execution_preset
+        )
+        return resolved_runner_kind, resolved_agent_backend
 
     def _build_summary(self, bundle: DynamicRunBundle, run_summaries: list[dict[str, Any]]) -> dict[str, Any]:
         summary = {
@@ -358,3 +515,50 @@ class StudioRunManager:
 
     def list_agents(self) -> list[dict]:
         return serialize_agent_backends(list_agent_backends(self.benchmark_root))
+
+    def list_profiles(self) -> list[dict[str, Any]]:
+        return [
+            build_profile_payload(profile, self._find_best_summary(profile=profile))
+            for profile in list_profiles(self.benchmark_root)
+        ]
+
+    def get_profile(self, profile_id: str) -> dict[str, Any] | None:
+        try:
+            profile = load_profile(self.benchmark_root, profile_id)
+        except FileNotFoundError:
+            return None
+        return build_profile_payload(profile, self._find_best_summary(profile=profile))
+
+    def get_anthropic_demo(self) -> dict[str, Any]:
+        payload = self.get_profile('anthropic-demo')
+        if payload is None:
+            raise FileNotFoundError('Anthropic demo profile not found.')
+        return payload
+
+    def _find_best_summary(self, *, profile: BenchmarkProfile) -> dict[str, Any] | None:
+        best_summary: dict[str, Any] | None = None
+        best_score = -1.0
+        expected_runner_kind, expected_agent_backend = execution_preset_to_runtime(
+            profile.execution_preset
+        )
+        for summary_path in self.runs_root.glob('*/summary.json'):
+            payload = json.loads(summary_path.read_text())
+            inputs = payload.get('inputs') or {}
+            benchmark = payload.get('benchmark') or {}
+            if payload.get('status') != 'completed':
+                continue
+            if inputs.get('profile_id') == profile.id:
+                score = float(benchmark.get('average_score') or 0.0)
+                if score >= best_score:
+                    best_score = score
+                    best_summary = payload
+                continue
+            if inputs.get('runner_kind') != expected_runner_kind:
+                continue
+            if inputs.get('agent_backend') != expected_agent_backend:
+                continue
+            score = float(benchmark.get('average_score') or 0.0)
+            if score >= best_score:
+                best_score = score
+                best_summary = payload
+        return best_summary

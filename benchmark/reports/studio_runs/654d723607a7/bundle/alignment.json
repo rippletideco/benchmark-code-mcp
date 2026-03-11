@@ -1,0 +1,52 @@
+[
+  {
+    "rule_id": "agents-1",
+    "status": "unverifiable",
+    "severity": "warning",
+    "matched_claim_ids": [],
+    "explanation": "Rule could not be matched to a concrete MCP manifest claim."
+  },
+  {
+    "rule_id": "agents-2",
+    "status": "unverifiable",
+    "severity": "warning",
+    "matched_claim_ids": [],
+    "explanation": "Rule could not be matched to a concrete MCP manifest claim."
+  },
+  {
+    "rule_id": "extra:3",
+    "status": "extra_in_mcp",
+    "severity": "info",
+    "matched_claim_ids": [
+      "$.mcpServers.rippletide.type=http"
+    ],
+    "explanation": "MCP manifest exposes a claim that no instruction rule referenced directly."
+  },
+  {
+    "rule_id": "extra:4",
+    "status": "extra_in_mcp",
+    "severity": "info",
+    "matched_claim_ids": [
+      "$.mcpServers.rippletide.url=https://mcp.example.test"
+    ],
+    "explanation": "MCP manifest exposes a claim that no instruction rule referenced directly."
+  },
+  {
+    "rule_id": "extra:5",
+    "status": "extra_in_mcp",
+    "severity": "info",
+    "matched_claim_ids": [
+      "server rippletide locator https://mcp.example.test"
+    ],
+    "explanation": "MCP manifest exposes a claim that no instruction rule referenced directly."
+  },
+  {
+    "rule_id": "extra:6",
+    "status": "extra_in_mcp",
+    "severity": "info",
+    "matched_claim_ids": [
+      "server rippletide transport http"
+    ],
+    "explanation": "MCP manifest exposes a claim that no instruction rule referenced directly."
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "sources": [
+    {
+      "path": "AGENTS.md",
+      "content": "Validate before concluding.\nNever overwrite user changes.\n",
+      "source_kind": "agents"
+    }
+  ],
+  "rules": [
+    {
+      "id": "agents-1",
+      "source_kind": "agents",
+      "source_file": "AGENTS.md",
+      "scope_path": "/",
+      "category": "validation",
+      "requirement_level": "informational",
+      "normalized_claim": "validate before concluding.",
+      "raw_text": "Validate before concluding.",
+      "confidence": 0.58,
+      "enforceability": "high"
+    },
+    {
+      "id": "agents-2",
+      "source_kind": "agents",
+      "source_file": "AGENTS.md",
+      "scope_path": "/",
+      "category": "worktree",
+      "requirement_level": "hard",
+      "normalized_claim": "never overwrite user changes.",
+      "raw_text": "Never overwrite user changes.",
+      "confidence": 0.72,
+      "enforceability": "high"
+    }
+  ],
+  "conflicts": [],
+  "shadowed_rules": [],
+  "low_confidence_rules": [
+    "agents-1"
+  ],
+  "extraction_mode": "deterministic"
+}

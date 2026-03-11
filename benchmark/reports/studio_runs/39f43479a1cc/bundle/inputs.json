@@ -1,0 +1,17 @@
+{
+  "profile_id": "anthropic-demo",
+  "profile_name": "Anthropic demo",
+  "repo_path": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase",
+  "runner_kind": "external",
+  "agent_backend": "claude",
+  "adapter_command": "python3 /Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/scripts/adapter_claude.py {request_file}",
+  "instruction_sources": [
+    {
+      "type": "repo_file",
+      "label": "Anthropic demo prompt",
+      "origin": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/benchmark/profiles/prompts/studio-anthropic.md"
+    }
+  ],
+  "mcp_source_type": "file",
+  "mcp_source_origin": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/benchmark/profiles/mcp/rippletide.mcp.json"
+}

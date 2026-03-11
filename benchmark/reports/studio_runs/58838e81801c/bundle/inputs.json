@@ -1,0 +1,17 @@
+{
+  "profile_id": "quick-demo",
+  "profile_name": "Quick demo",
+  "repo_path": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase",
+  "runner_kind": "demo",
+  "agent_backend": "codex",
+  "adapter_command": null,
+  "instruction_sources": [
+    {
+      "type": "repo_file",
+      "label": "Default studio prompt",
+      "origin": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/benchmark/profiles/prompts/studio-default.md"
+    }
+  ],
+  "mcp_source_type": "file",
+  "mcp_source_origin": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/benchmark/profiles/mcp/rippletide.mcp.json"
+}

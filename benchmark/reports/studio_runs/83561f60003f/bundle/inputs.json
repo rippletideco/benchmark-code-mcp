@@ -1,0 +1,9 @@
+{
+  "repo_path": "/private/var/folders/1z/jlh723cx58nbj81d9h354s3h0000gn/T/pytest-of-guillaume_deramchi/pytest-34/test_server_creates_run_and_ex0/api-sample-repo",
+  "runner_kind": "demo",
+  "agent_backend": "codex",
+  "adapter_command": null,
+  "instruction_files": [
+    "AGENTS.md"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "sources": [
+    {
+      "path": "studio-default.md",
+      "content": "Validate before concluding.\nMake the smallest safe change.\nExplore the repository before editing.\nDo not overwrite user changes.\n",
+      "source_kind": "markdown"
+    }
+  ],
+  "rules": [
+    {
+      "id": "markdown-1",
+      "source_kind": "markdown",
+      "source_file": "studio-default.md",
+      "scope_path": "/",
+      "category": "validation",
+      "requirement_level": "informational",
+      "normalized_claim": "validate before concluding.",
+      "raw_text": "Validate before concluding.",
+      "confidence": 0.58,
+      "enforceability": "high"
+    },
+    {
+      "id": "markdown-3",
+      "source_kind": "markdown",
+      "source_file": "studio-default.md",
+      "scope_path": "/",
+      "category": "other",
+      "requirement_level": "informational",
+      "normalized_claim": "explore the repository before editing.",
+      "raw_text": "Explore the repository before editing.",
+      "confidence": 0.58,
+      "enforceability": "low"
+    },
+    {
+      "id": "markdown-4",
+      "source_kind": "markdown",
+      "source_file": "studio-default.md",
+      "scope_path": "/",
+      "category": "worktree",
+      "requirement_level": "hard",
+      "normalized_claim": "do not overwrite user changes.",
+      "raw_text": "Do not overwrite user changes.",
+      "confidence": 0.58,
+      "enforceability": "high"
+    }
+  ],
+  "conflicts": [],
+  "shadowed_rules": [],
+  "low_confidence_rules": [
+    "markdown-1",
+    "markdown-3",
+    "markdown-4"
+  ],
+  "extraction_mode": "deterministic"
+}

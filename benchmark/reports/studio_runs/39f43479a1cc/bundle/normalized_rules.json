@@ -1,0 +1,54 @@
+{
+  "sources": [
+    {
+      "path": "studio-anthropic.md",
+      "content": "Validate before concluding.\nKeep changes minimal and focused.\nPrefer observed repo state over stale assumptions.\nDo not overwrite user changes or instruction files.\n",
+      "source_kind": "markdown"
+    }
+  ],
+  "rules": [
+    {
+      "id": "markdown-1",
+      "source_kind": "markdown",
+      "source_file": "studio-anthropic.md",
+      "scope_path": "/",
+      "category": "validation",
+      "requirement_level": "informational",
+      "normalized_claim": "validate before concluding.",
+      "raw_text": "Validate before concluding.",
+      "confidence": 0.58,
+      "enforceability": "high"
+    },
+    {
+      "id": "markdown-3",
+      "source_kind": "markdown",
+      "source_file": "studio-anthropic.md",
+      "scope_path": "/",
+      "category": "other",
+      "requirement_level": "soft",
+      "normalized_claim": "prefer observed repo state over stale assumptions.",
+      "raw_text": "Prefer observed repo state over stale assumptions.",
+      "confidence": 0.72,
+      "enforceability": "low"
+    },
+    {
+      "id": "markdown-4",
+      "source_kind": "markdown",
+      "source_file": "studio-anthropic.md",
+      "scope_path": "/",
+      "category": "worktree",
+      "requirement_level": "hard",
+      "normalized_claim": "do not overwrite user changes or instruction files.",
+      "raw_text": "Do not overwrite user changes or instruction files.",
+      "confidence": 0.58,
+      "enforceability": "high"
+    }
+  ],
+  "conflicts": [],
+  "shadowed_rules": [],
+  "low_confidence_rules": [
+    "markdown-1",
+    "markdown-4"
+  ],
+  "extraction_mode": "deterministic"
+}

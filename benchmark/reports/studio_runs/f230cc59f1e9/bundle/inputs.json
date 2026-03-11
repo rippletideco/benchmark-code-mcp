@@ -1,0 +1,17 @@
+{
+  "profile_id": null,
+  "profile_name": null,
+  "repo_path": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase",
+  "runner_kind": "demo",
+  "agent_backend": "codex",
+  "adapter_command": null,
+  "instruction_sources": [
+    {
+      "type": "auto",
+      "origin": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase/benchmark/reports/studio_runs/f230cc59f1e9/instructions/SYSTEM_PROMPT.md",
+      "label": "SYSTEM_PROMPT.md"
+    }
+  ],
+  "mcp_source_type": "inline",
+  "mcp_source_origin": "inline"
+}

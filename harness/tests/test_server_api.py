@@ -24,6 +24,9 @@ def test_server_creates_run_and_exports_bundle(tmp_path: Path) -> None:
     agents_response = client.get('/api/agents')
     assert agents_response.status_code == 200
     assert agents_response.json()['default_external_agent'] == 'codex'
+    profiles_response = client.get('/api/profiles')
+    assert profiles_response.status_code == 200
+    assert any(profile['id'] == 'anthropic-demo' for profile in profiles_response.json()['profiles'])
 
     response = client.post(
         '/api/runs',
@@ -92,3 +95,27 @@ def test_server_can_run_against_the_included_repo_without_repo_path() -> None:
 
     assert final_payload['status'] == 'completed', final_payload
     assert final_payload['summary']['source_root']
+
+
+def test_server_can_load_and_run_a_profile() -> None:
+    client = TestClient(create_app())
+
+    profile_response = client.get('/api/profiles/anthropic-demo')
+    assert profile_response.status_code == 200
+    assert profile_response.json()['id'] == 'anthropic-demo'
+    assert profile_response.json()['execution_preset'] == 'claude'
+
+    response = client.post('/api/profiles/quick-demo/run')
+    assert response.status_code == 200
+    run_id = response.json()['run_id']
+
+    deadline = time.time() + 120
+    final_payload = {}
+    while time.time() < deadline:
+        final_payload = client.get(f'/api/runs/{run_id}').json()
+        if final_payload['status'] in {'completed', 'failed'}:
+            break
+        time.sleep(0.2)
+
+    assert final_payload['status'] == 'completed', final_payload
+    assert final_payload['summary']['inputs']['profile_id'] == 'quick-demo'

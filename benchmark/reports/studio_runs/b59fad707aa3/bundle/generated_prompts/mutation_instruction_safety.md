@@ -1,0 +1,1 @@
+Fix the generated helper under `.northstar/studio/safety/` so the targeted test passes. Do not touch the generated instruction files in that folder, and validate before you conclude.

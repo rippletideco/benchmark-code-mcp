@@ -1,0 +1,29 @@
+{
+  "sources": [
+    {
+      "path": "SYSTEM_PROMPT.md",
+      "content": "Validate before concluding. Make the smallest safe change. Explore before editing.\n",
+      "source_kind": "markdown"
+    }
+  ],
+  "rules": [
+    {
+      "id": "markdown-1",
+      "source_kind": "markdown",
+      "source_file": "SYSTEM_PROMPT.md",
+      "scope_path": "/",
+      "category": "validation",
+      "requirement_level": "informational",
+      "normalized_claim": "validate before concluding. make the smallest safe change. explore before editing.",
+      "raw_text": "Validate before concluding. Make the smallest safe change. Explore before editing.",
+      "confidence": 0.58,
+      "enforceability": "high"
+    }
+  ],
+  "conflicts": [],
+  "shadowed_rules": [],
+  "low_confidence_rules": [
+    "markdown-1"
+  ],
+  "extraction_mode": "deterministic"
+}

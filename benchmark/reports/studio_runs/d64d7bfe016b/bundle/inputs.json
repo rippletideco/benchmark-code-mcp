@@ -1,0 +1,9 @@
+{
+  "repo_path": "/Users/guillaume_deramchi/Documents/mcp-code-rippletide-showcase",
+  "runner_kind": "demo",
+  "agent_backend": "codex",
+  "adapter_command": null,
+  "instruction_files": [
+    "SYSTEM_PROMPT.md"
+  ]
+}

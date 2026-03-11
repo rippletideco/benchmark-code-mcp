@@ -1,0 +1,21 @@
+{
+  "id": "anthropic-demo",
+  "name": "Anthropic demo",
+  "description": "Included repo plus Claude Code and the shared rippletide MCP profile.",
+  "target_mode": "included",
+  "execution_preset": "claude",
+  "instruction_sources": [
+    {
+      "type": "repo_file",
+      "path": "benchmark/profiles/prompts/studio-anthropic.md",
+      "label": "Anthropic demo prompt"
+    }
+  ],
+  "mcp_source": {
+    "type": "file",
+    "path": "benchmark/profiles/mcp/rippletide.mcp.json"
+  },
+  "max_workers": 2,
+  "tags": ["demo", "anthropic"],
+  "demo_rank": 100
+}

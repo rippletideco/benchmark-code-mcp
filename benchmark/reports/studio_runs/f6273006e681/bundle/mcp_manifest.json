@@ -1,0 +1,31 @@
+{
+  "servers": [
+    {
+      "id": "rippletide",
+      "transport": "http",
+      "locator": "https://mcp.example.test",
+      "enabled": true
+    }
+  ],
+  "tools": [],
+  "resources": [],
+  "prompts": [],
+  "claims": [
+    "$.mcpServers.rippletide.type=http",
+    "$.mcpServers.rippletide.url=https://mcp.example.test",
+    "server rippletide locator https://mcp.example.test",
+    "server rippletide transport http"
+  ],
+  "provenance": {
+    "has_servers": true,
+    "claim_count": 4
+  },
+  "raw_config": {
+    "mcpServers": {
+      "rippletide": {
+        "type": "http",
+        "url": "https://mcp.example.test"
+      }
+    }
+  }
+}
