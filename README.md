@@ -68,89 +68,45 @@ pnpm studio:web
 
 ## How To Use The Studio
 
-The Studio has two flows:
-
-### 1. Quick Start From Profile
-
-Use this for repeatable benchmarks.
+The Studio now runs as a single one-shot flow.
 
 Steps:
 
 1. Open `/studio`
-2. Pick a saved profile.
-   - `Quick demo` is the recommended deterministic local smoke test.
-   - `Anthropic demo` is an external-agent run that depends on CLI auth and the shared rippletide MCP.
-3. Click `Run precheck`
-4. Review the precheck:
-   - total rules
-   - covered by MCP
-   - missing from MCP
-   - ambiguous
-5. If coverage is acceptable, click `Launch benchmark`
-6. If coverage is too low, the Studio warns you before launch
-7. Review the final `MD vs MCP` comparison
+2. Choose one connected agent:
+   - `Codex`
+   - `Claude Code`
+3. Paste the markdown brief you want to benchmark
+4. Paste the MCP JSON config inline
+5. Optionally set a local repo path for the sandbox
+   - if empty, the Studio falls back to this benchmark repo
+6. Click `Run benchmark`
+7. Watch the harness generate tasks, validations, and the final `MD vs MCP` comparison
 
-Profiles live in `benchmark/profiles/`.
-
-### 2. Custom One-Off Config
-
-Use this when you want to test a repo, `.md`, or MCP setup that is not yet saved as a profile.
-
-Steps:
-
-1. Choose the target:
-   - `Included benchmark repo`
-   - `Another local repo`
-2. Choose execution:
-   - `demo`
-   - `codex`
-   - `claude`
-   - `custom`
-3. Open `Instruction and MCP overrides`
-4. Optionally upload instruction files (`.md`, `.txt`)
-5. Choose MCP source type:
-   - `inline`
-   - `file`
-   - `command`
-6. Run precheck
-7. Launch benchmark
+The primary UI intentionally removes profile selection, precheck confirmation, file uploads, and MCP mode switching to keep the benchmark flow short and explicit.
 
 ## What The Benchmark Actually Does
 
-The benchmark now has two distinct stages.
+The UI is single-step, but the harness still performs two internal phases:
 
-### Stage 1: Precheck
+### 1. Coverage snapshot
 
-The precheck is a diagnostic gate, not the benchmark itself.
+Before execution, the harness:
 
-It does this:
-
-1. parses the `.md` rule set
+1. parses the pasted `.md`
 2. normalizes rules into canonical benchmark rules
 3. checks whether those rules are represented in the MCP
-4. reports:
+4. records a coverage snapshot:
    - `covered`
    - `missing`
    - `ambiguous`
    - `not_applicable`
 
-Coverage verification is hybrid:
+This is no longer a user-facing gate in the Studio UI. It is kept as internal benchmark metadata and shown only as a secondary detail after launch.
 
-- manifest / JSON comparison first
-- live MCP verification only for unresolved or ambiguous rules
+### 2. Benchmark execution
 
-The Studio asks for confirmation before launch if MCP coverage is too low:
-
-- more than `10%` of rules missing, or
-- more than `5` missing rules
-
-If you continue anyway, the MCP side is still benchmarked, but missing rules are expected to penalize it.
-
-### Stage 2: Benchmark
-
-This is the real comparison.
-
-The Studio:
+The harness then:
 
 1. compiles one executable benchmark task per benchmarkable rule
 2. runs every task under `condition_md`
@@ -163,76 +119,29 @@ The Studio:
    - category-level diff
    - `md_only`, `mcp_only`, and shared violations
 
-The comparison axis is strictly `MD vs MCP` rule adherence.
+The comparison axis remains strictly `MD vs MCP` rule adherence.
 
-## MCP Source Types
+## MCP Input
 
-The Studio supports three MCP input modes.
+The primary Studio flow accepts MCP config as pasted inline JSON only.
 
-### `inline`
+This keeps the UI friction low and makes the benchmark input explicit in one screen.
 
-Paste MCP JSON directly into the UI.
-
-Use this for:
-
-- quick experiments
-- debugging
-- temporary configurations
-
-### `file`
-
-Point the Studio at a JSON file.
-
-Use this for:
-
-- versioned benchmark setups
-- shared team configs
-- reproducible demos
-
-Example profile-backed MCP file:
+Versioned MCP examples still live in the repo for compatibility and scripted usage:
 
 - `benchmark/profiles/mcp/rippletide.mcp.json`
 - `benchmark/profiles/mcp/quick-demo.mcp.json`
 
-### `command`
-
-Provide a local command that prints valid MCP JSON to stdout.
-
-Use this when:
-
-- your MCP comes from another platform
-- you can export it via a script or CLI
-- you want to avoid copying JSON manually
-
-Example shape:
-
-```bash
-python3 scripts/export-mcp.py
-```
-
-The Studio consumes this output only. It does not attempt to write back to the external platform.
-
 ## Profiles
 
-Profiles are versioned in:
+Profiles are still versioned in `benchmark/profiles/` for scripted runs, fixtures, and backwards-compatible backend flows.
 
-- `benchmark/profiles/`
-
-Current built-in examples:
+Current examples:
 
 - `benchmark/profiles/anthropic-demo.json`
 - `benchmark/profiles/quick-demo.json`
 
-A profile contains:
-
-- target mode
-- execution preset
-- instruction sources
-- MCP source
-- worker count
-- tags / demo rank
-
-Profiles are the recommended way to run repeated benchmarks.
+They are no longer the primary path in the `/studio` UI.
 
 For local validation from the repo root, use:
 
@@ -242,15 +151,12 @@ pnpm web:test -- --run
 
 ## Built-In Agents
 
-The Studio can currently benchmark:
+The primary Studio surface currently exposes:
 
 - `Codex`
 - `Claude Code`
-- `Custom adapter command`
 
-The backend detects local availability and auth state via:
-
-- `GET /api/agents`
+The backend still reports full agent availability via `GET /api/agents`.
 
 ## Running From The CLI
 

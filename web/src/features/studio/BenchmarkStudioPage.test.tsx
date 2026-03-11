@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BenchmarkStudioPage } from './BenchmarkStudioPage';
 
@@ -21,7 +21,12 @@ class MockEventSource {
   }
 }
 
-function buildAgentCatalog() {
+function buildAgentCatalog(
+  overrides: Partial<{
+    default_external_agent: 'codex' | 'claude' | 'custom';
+    agents: Array<Record<string, unknown>>;
+  }> = {}
+) {
   return {
     default_external_agent: 'codex',
     agents: [
@@ -59,83 +64,28 @@ function buildAgentCatalog() {
         requires_custom_command: true,
       },
     ],
+    ...overrides,
   };
 }
 
-function buildProfiles() {
+function buildBenchmarkSummary() {
   return {
-    profiles: [
-      {
-        id: 'quick-demo',
-        name: 'Quick demo',
-        description: 'Deterministic local smoke test for the included benchmark repo.',
-        target_mode: 'included',
-        execution_preset: 'demo',
-        instruction_sources: [],
-        mcp_source: {
-          type: 'file',
-          path: 'benchmark/profiles/mcp/quick-demo.mcp.json',
-        },
-        max_workers: 2,
-        proof_run: null,
-      },
-      {
-        id: 'anthropic-demo',
-        name: 'Anthropic demo',
-        description: 'External-agent benchmark using Claude Code and the shared rippletide MCP profile.',
-        target_mode: 'included',
-        execution_preset: 'claude',
-        instruction_sources: [
-          {
-            type: 'repo_file',
-            path: 'benchmark/profiles/prompts/studio-anthropic.md',
-            label: 'Anthropic demo prompt',
-          },
-        ],
-        mcp_source: {
-          type: 'file',
-          path: 'benchmark/profiles/mcp/rippletide.mcp.json',
-        },
-        max_workers: 2,
-        proof_run: {
-          run_id: '15ddae9ccd6e',
-          md_summary: { adherence_rate: 0.71 },
-          mcp_summary: { adherence_rate: 0.85 },
-        },
-      },
-    ],
-  };
-}
-
-function buildPrecheckResponse(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    profile_id: 'quick-demo',
-    profile_name: 'Quick demo',
+    run_id: 'run-123',
+    status: 'completed',
     source_root: '/tmp/repo',
-    runner_kind: 'demo',
-    agent_backend: 'codex',
-    instruction_sources: [
-      {
-        type: 'repo_file',
-        origin: 'benchmark/profiles/prompts/studio-default.md',
-        label: 'Default studio prompt',
-      },
-    ],
-    mcp_source_type: 'file',
-    mcp_source_origin: 'benchmark/profiles/mcp/quick-demo.mcp.json',
-    capabilities: {
-      supported: true,
-      support_reason: 'Detected a pytest-compatible repository.',
-      test_runner: 'pytest',
-      language: 'python',
+    runnable_task_count: 3,
+    inputs: {
+      agent_backend: 'codex',
+      mcp_source_type: 'inline',
+      runner_kind: 'external',
     },
     precheck: {
-      total_rules: 12,
-      benchmarkable_rules: 9,
-      excluded_rules: 3,
-      covered_rules: 10,
-      missing_rules: 1,
-      ambiguous_rules: 1,
+      total_rules: 4,
+      benchmarkable_rules: 3,
+      excluded_rules: 1,
+      covered_rules: 3,
+      missing_rules: 0,
+      ambiguous_rules: 0,
       requires_confirmation: false,
       thresholds: {
         missing_count: 5,
@@ -156,46 +106,32 @@ function buildPrecheckResponse(overrides: Partial<Record<string, unknown>> = {})
           coverage: {
             status: 'covered',
             evidence_source: 'manifest',
-            explanation: 'Covered.',
+            explanation: 'Covered by the MCP manifest.',
           },
         },
       ],
     },
-    ...overrides,
-  };
-}
-
-function buildBenchmarkSummary() {
-  return {
-    run_id: 'run-123',
-    status: 'completed',
-    inputs: {
-      profile_id: 'quick-demo',
-      profile_name: 'Quick demo',
-      agent_backend: 'codex',
-      mcp_source_type: 'file',
-    },
     md_summary: {
-      rule_count: 9,
+      rule_count: 3,
       adherence_rate: 0.66,
-      pass_count: 5,
-      partial_count: 2,
-      fail_count: 2,
+      pass_count: 2,
+      partial_count: 0,
+      fail_count: 1,
     },
     mcp_summary: {
-      rule_count: 9,
+      rule_count: 3,
       adherence_rate: 0.88,
-      pass_count: 8,
-      partial_count: 1,
+      pass_count: 3,
+      partial_count: 0,
       fail_count: 0,
     },
     category_comparisons: [
       {
         category: 'validation',
-        md_rate: 0.5,
-        mcp_rate: 1,
-        delta: 0.5,
-        rule_count: 1,
+        md_rate: 0.66,
+        mcp_rate: 0.88,
+        delta: 0.22,
+        rule_count: 3,
       },
     ],
     rule_comparisons: [
@@ -223,6 +159,24 @@ function buildBenchmarkSummary() {
       shared: [],
     },
     benchmark_runtime_ms: 80000,
+    runs: [
+      {
+        run_id: 'benchmark-agents-1-condition_md',
+        task_id: 'benchmark-agents-1',
+        condition: 'condition_md',
+        normalized_score: 0,
+        task_success: false,
+        hard_violation_count: 1,
+      },
+      {
+        run_id: 'benchmark-agents-1-condition_mcp',
+        task_id: 'benchmark-agents-1',
+        condition: 'condition_mcp',
+        normalized_score: 1,
+        task_success: true,
+        hard_violation_count: 0,
+      },
+    ],
   };
 }
 
@@ -236,88 +190,166 @@ describe('BenchmarkStudioPage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders profile-first quick start and proof run details', async () => {
+  it('renders the simplified one-shot flow and hides the old precheck path', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => buildAgentCatalog() })
-      .mockResolvedValueOnce({ ok: true, json: async () => buildProfiles() });
+      .mockResolvedValue({ ok: true, json: async () => buildAgentCatalog() });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<BenchmarkStudioPage />);
 
     expect(
-      screen.getByRole('heading', {
-        name: /measure rule adherence, not generic agent behavior/i,
-      })
+      screen.getByRole('heading', { name: /paste the rules\. paste the mcp\. run\./i })
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/api/profiles');
+      expect(fetchMock).toHaveBeenCalledWith('/api/agents');
     });
 
-    expect(screen.getByText(/quick demo is the recommended local smoke test/i)).toBeInTheDocument();
-    expect(screen.getByText(/deterministic local smoke test/i)).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /run precheck/i })[0]).toBeInTheDocument();
-
-    await userEvent.setup().click(screen.getByRole('button', { name: /anthropic demo/i }));
-    expect(screen.getByRole('link', { name: /export proof run/i })).toHaveAttribute(
-      'href',
-      '/api/runs/15ddae9ccd6e/export'
+    expect(screen.queryByText(/run precheck/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/select a profile/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /run benchmark/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /codex/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
     );
+    expect(screen.getByText(/leave this empty to benchmark against the current showcase repo/i)).toBeInTheDocument();
   });
 
-  it('runs precheck first and then launches the benchmark', async () => {
+  it('requires markdown and valid json before enabling run', async () => {
     const user = userEvent.setup();
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => buildAgentCatalog() })
-      .mockResolvedValueOnce({ ok: true, json: async () => buildProfiles() })
-      .mockResolvedValueOnce({ ok: true, json: async () => buildPrecheckResponse() })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ run_id: 'run-123', status: 'queued' }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ run_id: 'run-123', status: 'running' }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ run_id: 'run-123', status: 'completed', summary: buildBenchmarkSummary() }) });
+      .mockResolvedValue({ ok: true, json: async () => buildAgentCatalog() });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<BenchmarkStudioPage />);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/api/profiles');
+      expect(fetchMock).toHaveBeenCalledWith('/api/agents');
     });
 
-    await user.click(screen.getByText(/instruction and mcp overrides/i));
-    await user.type(screen.getByLabelText(/instruction markdown/i), 'Validate before concluding.');
-    await user.click(screen.getAllByRole('button', { name: /^run precheck$/i })[1]);
+    const runButton = screen.getByRole('button', { name: /run benchmark/i });
+    const markdownField = screen.getByLabelText(/markdown brief/i);
+    const mcpField = screen.getByLabelText(/mcp json config/i);
+
+    expect(runButton).toBeDisabled();
+
+    await user.type(markdownField, 'Validate before concluding.');
+    fireEvent.change(mcpField, { target: { value: '{bad json' } });
+
+    expect(screen.getByText(/mcp json is invalid/i)).toBeInTheDocument();
+    expect(runButton).toBeDisabled();
+
+    fireEvent.change(mcpField, {
+      target: {
+        value: '{"mcpServers":{"demo":{"type":"http","url":"https://mcp.example.test"}}}',
+      },
+    });
 
     await waitFor(() => {
-      expect(
-        fetchMock.mock.calls.some(
-          (call) =>
-            call[0] === '/api/precheck' &&
-            (call[1] as { method?: string } | undefined)?.method === 'POST'
-        )
-      ).toBe(true);
+      expect(runButton).toBeEnabled();
     });
-    const precheckCall = fetchMock.mock.calls.find((call) => call[0] === '/api/precheck');
-    const formData = precheckCall?.[1] && (precheckCall[1] as { body?: FormData }).body;
+  });
+
+  it('submits a single /api/runs request and renders live progress plus final results', async () => {
+    const user = userEvent.setup();
+    let runLookupCount = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (input === '/api/agents') {
+        return {
+          ok: true,
+          json: async () => buildAgentCatalog(),
+        };
+      }
+
+      if (input === '/api/runs') {
+        return {
+          ok: true,
+          json: async () => ({ run_id: 'run-123', status: 'queued' }),
+        };
+      }
+
+      if (input === '/api/runs/run-123') {
+        runLookupCount += 1;
+        return {
+          ok: true,
+          json: async () =>
+            runLookupCount >= 3
+              ? { run_id: 'run-123', status: 'completed', summary: buildBenchmarkSummary() }
+              : { run_id: 'run-123', status: 'running' },
+        };
+      }
+
+      throw new Error(`Unexpected fetch call: ${String(input)}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<BenchmarkStudioPage />);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/agents');
+    });
+
+    await user.type(screen.getByLabelText(/markdown brief/i), 'Validate before concluding.');
+    fireEvent.change(screen.getByLabelText(/mcp json config/i), {
+      target: {
+        value: '{"mcpServers":{"demo":{"type":"http","url":"https://mcp.example.test"}}}',
+      },
+    });
+    await user.click(screen.getByRole('button', { name: /run benchmark/i }));
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some((call) => call[0] === '/api/runs')).toBe(true);
+    });
+
+    const createCall = fetchMock.mock.calls.find((call) => call[0] === '/api/runs');
+    const formData = createCall?.[1] && (createCall[1] as { body?: FormData }).body;
+
     expect(formData).toBeInstanceOf(FormData);
+    expect(formData?.get('runner_kind')).toBe('external');
+    expect(formData?.get('agent_backend')).toBe('codex');
+    expect(formData?.get('max_workers')).toBe('8');
+    expect(formData?.get('repo_path')).toBeNull();
     expect(formData?.getAll('instruction_files')).toHaveLength(1);
-    expect(screen.getByText(/the mcp coverage is good enough to benchmark without confirmation/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /launch benchmark/i }));
-
-    await waitFor(() => {
-      expect(
-        fetchMock.mock.calls.some(
-          (call) =>
-            call[0] === '/api/benchmark' &&
-            (call[1] as { method?: string } | undefined)?.method === 'POST'
-        )
-      ).toBe(true);
-    });
+    expect((formData?.get('instruction_files') as { name?: string } | null)?.name).toBe(
+      'pasted-instructions.md'
+    );
+    expect(fetchMock.mock.calls.some((call) => call[0] === '/api/precheck')).toBe(false);
+    expect(fetchMock.mock.calls.some((call) => call[0] === '/api/benchmark')).toBe(false);
 
     expect(MockEventSource.instances[0]?.url).toBe('/api/runs/run-123/events');
 
     await act(async () => {
+      MockEventSource.instances[0].emit({
+        event_type: 'precheck_ready',
+        payload: {
+          precheck: {
+            total_rules: 4,
+            benchmarkable_rules: 3,
+            excluded_rules: 1,
+            covered_rules: 3,
+            missing_rules: 0,
+            ambiguous_rules: 0,
+            requires_confirmation: false,
+            thresholds: {
+              missing_count: 5,
+              missing_percent: 0.1,
+            },
+            rules: [],
+          },
+        },
+      });
+      MockEventSource.instances[0].emit({
+        event_type: 'task_completed',
+        payload: {
+          task_id: 'benchmark-agents-1',
+          condition: 'condition_md',
+          completed_tasks: 1,
+          total_tasks: 6,
+          estimated_remaining_seconds: 24,
+        },
+      });
       MockEventSource.instances[0].emit({
         event_type: 'stream_closed',
         payload: { status: 'completed' },
@@ -325,23 +357,23 @@ describe('BenchmarkStudioPage', () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(6);
-    });
-
-    await waitFor(() => {
       expect(screen.getByText(/MD adherence/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tasks generated/i)).toBeInTheDocument();
       expect(screen.getAllByText(/88%/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/benchmark-agents-1/i).length).toBeGreaterThan(0);
+      expect(screen.getByText('1/6')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /export latest run bundle/i })).toHaveAttribute(
+        'href',
+        '/api/runs/run-123/export'
+      );
     });
   });
 
-  it('uses the agent catalog for execution cards and disables unavailable agents', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          default_external_agent: 'codex',
+  it('disables unavailable agents and falls back to an available default', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () =>
+        buildAgentCatalog({
+          default_external_agent: 'claude',
           agents: [
             {
               key: 'codex',
@@ -349,7 +381,7 @@ describe('BenchmarkStudioPage', () => {
               description: 'OpenAI Codex CLI benchmark adapter.',
               available: true,
               authenticated: true,
-              default_for_external: true,
+              default_for_external: false,
               command_preview: null,
               auth_message: 'Logged in using ChatGPT',
               requires_custom_command: false,
@@ -360,7 +392,7 @@ describe('BenchmarkStudioPage', () => {
               description: 'Anthropic Claude Code CLI benchmark adapter.',
               available: true,
               authenticated: false,
-              default_for_external: false,
+              default_for_external: true,
               command_preview: null,
               auth_message: 'Claude login required',
               requires_custom_command: false,
@@ -378,18 +410,20 @@ describe('BenchmarkStudioPage', () => {
             },
           ],
         }),
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => buildProfiles() });
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<BenchmarkStudioPage />);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/api/profiles');
+      expect(fetchMock).toHaveBeenCalledWith('/api/agents');
     });
 
-    expect(screen.getAllByRole('button', { name: /claude code/i })[1]).toBeDisabled();
-    expect(screen.getByText(/claude login required/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /custom command/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /claude code/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /codex/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getByText(/connect this agent in the backend first/i)).toBeInTheDocument();
   });
 });
