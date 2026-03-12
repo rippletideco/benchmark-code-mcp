@@ -16,6 +16,7 @@ from .adapter_common import (
     extract_user_change_paths,
     load_request,
 )
+from .executable_resolver import resolve_agent_cli_executable
 
 
 def _format_config_key(prefix: str, key: str, field: str) -> str:
@@ -26,8 +27,9 @@ def _format_config_key(prefix: str, key: str, field: str) -> str:
 
 def build_codex_command(request: dict) -> list[str]:
     workspace_path = request['workspace_path']
+    executable = resolve_agent_cli_executable('codex') or 'codex'
     command = [
-        'codex',
+        executable,
         'exec',
         '--json',
         '--ephemeral',

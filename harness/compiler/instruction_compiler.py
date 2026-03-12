@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
+from ..executable_resolver import resolve_agent_cli_executable
 from ..studio_models import (
     CompiledInstructions,
     InstructionConflict,
@@ -178,12 +178,13 @@ class InstructionCompiler:
         sources: list[PromptSource],
         repo_root: Path,
     ) -> CompiledInstructions | None:
-        if shutil.which('codex') is None:
+        executable = resolve_agent_cli_executable('codex')
+        if executable is None:
             return None
 
         prompt = self._build_codex_prompt(sources)
         command = [
-            'codex',
+            executable,
             'exec',
             '--json',
             '--sandbox',

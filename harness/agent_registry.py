@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
+
+from .executable_resolver import resolve_agent_cli_executable
 
 AgentKey = Literal['codex', 'claude', 'custom']
 
@@ -66,17 +67,17 @@ def serialize_agent_backends(backends: list[AgentBackendStatus]) -> list[dict]:
 
 
 def _detect_codex_backend(benchmark_root: Path) -> AgentBackendStatus:
-    executable = shutil.which('codex')
+    executable = resolve_agent_cli_executable('codex')
     command_preview = (
         f'python3 {benchmark_root / "scripts" / "adapter_codex.py"} {{request_file}}'
         if executable
         else None
     )
     authenticated = False
-    auth_message = 'Codex CLI not found in PATH.'
+    auth_message = 'Codex CLI not found on this machine.'
     if executable:
         completed = subprocess.run(
-            ['codex', 'login', 'status'],
+            [executable, 'login', 'status'],
             text=True,
             capture_output=True,
             check=False,
@@ -99,17 +100,17 @@ def _detect_codex_backend(benchmark_root: Path) -> AgentBackendStatus:
 
 
 def _detect_claude_backend(benchmark_root: Path) -> AgentBackendStatus:
-    executable = shutil.which('claude')
+    executable = resolve_agent_cli_executable('claude')
     command_preview = (
         f'python3 {benchmark_root / "scripts" / "adapter_claude.py"} {{request_file}}'
         if executable
         else None
     )
     authenticated = False
-    auth_message = 'Claude Code CLI not found in PATH.'
+    auth_message = 'Claude Code CLI not found on this machine.'
     if executable:
         completed = subprocess.run(
-            ['claude', 'auth', 'status', '--json'],
+            [executable, 'auth', 'status', '--json'],
             text=True,
             capture_output=True,
             check=False,

@@ -70,6 +70,17 @@ def test_build_command_includes_mcp_server_for_mcp_condition() -> None:
     assert 'mcp_servers.example_server.enabled=true' in joined
 
 
+def test_build_command_uses_resolved_codex_executable(monkeypatch) -> None:
+    monkeypatch.setattr(
+        'harness.codex_adapter.resolve_agent_cli_executable',
+        lambda name: '/opt/openai/bin/codex' if name == 'codex' else None,
+    )
+
+    command = build_codex_command(make_request('condition_md'))
+
+    assert command[0] == '/opt/openai/bin/codex'
+
+
 def test_extract_user_change_paths_reads_seed_patch() -> None:
     request_path = REPO_ROOT / 'benchmark' / 'reports' / 'runs' / 'fake' / 'run_request.json'
     request_path.parent.mkdir(parents=True, exist_ok=True)

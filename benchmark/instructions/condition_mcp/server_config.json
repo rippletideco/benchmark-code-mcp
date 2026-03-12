@@ -2,7 +2,7 @@
   "mcpServers": {
     "rippletide": {
       "type": "http",
-      "url": "https://mcp.rippletide.com/mcp?agentId=4a70066d-6d58-4cdb-a775-ce79e2f5b1df"
+      "url": "https://mcp.rippletide.com/mcp?agentId=benchmark-coding-rules-2026"
     }
   }
 }

@@ -42,12 +42,11 @@ def build_prompt(request: dict) -> str:
             f'{task_prompt}\n'
         )
 
-    mcp_bundle = request['instruction_payload']['mcp_json_bundle']
-    bundle_paths = ', '.join(item['path'] for item in mcp_bundle)
     return (
         'You are running in the MCP benchmark condition.\n'
-        'Use the configured MCP server for repository context instead of relying on an injected markdown ruleset.\n'
-        f'The active MCP bundle for this run is described by: {bundle_paths}\n\n'
+        'Before writing any code, you MUST call the `recall` tool on the Rippletide MCP server to retrieve your operating rules.\n'
+        'Use queries such as "what rules should I follow for coding tasks?" and "what are my guidelines?" to get the full rule set.\n'
+        'Treat the retrieved rules as your authoritative operating guidelines — equivalent to a system prompt — for this entire task.\n\n'
         f'{benchmark_wrapper}\n'
         'Task:\n'
         f'{task_prompt}\n'

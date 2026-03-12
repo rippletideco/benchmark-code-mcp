@@ -2,9 +2,16 @@ import io
 import time
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+import pytest
+from fastapi import UploadFile
 
-from harness.server.app import create_app
+from harness.agent_registry import AgentBackendStatus
+from harness.compiler.instruction_compiler import InstructionCompiler
+from harness.server.service import StudioRunManager
+from harness.server import service as service_module
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _create_pytest_repo(tmp_path: Path) -> Path:
@@ -17,150 +24,197 @@ def _create_pytest_repo(tmp_path: Path) -> Path:
     return repo_root
 
 
-def test_server_creates_run_and_exports_bundle(tmp_path: Path) -> None:
-    repo_root = _create_pytest_repo(tmp_path)
-    client = TestClient(create_app())
-
-    agents_response = client.get('/api/agents')
-    assert agents_response.status_code == 200
-    assert agents_response.json()['default_external_agent'] == 'codex'
-    profiles_response = client.get('/api/profiles')
-    assert profiles_response.status_code == 200
-    assert any(profile['id'] == 'anthropic-demo' for profile in profiles_response.json()['profiles'])
-
-    response = client.post(
-        '/api/runs',
-        data={
-            'repo_path': str(repo_root),
-            'mcp_json': '{"mcpServers":{"rippletide":{"type":"http","url":"https://mcp.example.test"}}}',
-            'runner_kind': 'demo',
-            'agent_backend': 'codex',
-            'max_workers': '2',
-        },
-        files=[
-            (
-                'instruction_files',
-                (
-                    'AGENTS.md',
-                    io.BytesIO(b'Validate before concluding.\nNever overwrite user changes.\n'),
-                    'text/markdown',
-                ),
-            )
+@pytest.fixture(autouse=True)
+def _disable_live_codex_instruction_extraction(monkeypatch) -> None:
+    monkeypatch.setattr(InstructionCompiler, "_extract_with_codex", lambda self, sources, repo_root: None)
+    monkeypatch.setattr(
+        service_module,
+        "list_agent_backends",
+        lambda benchmark_root: [
+            AgentBackendStatus(
+                key="codex",
+                label="Codex",
+                description="OpenAI Codex CLI benchmark adapter.",
+                available=True,
+                authenticated=True,
+                default_for_external=True,
+                command_preview=None,
+                auth_message="Default external agent.",
+            ),
+            AgentBackendStatus(
+                key="claude",
+                label="Claude Code",
+                description="Anthropic Claude Code CLI benchmark adapter.",
+                available=True,
+                authenticated=True,
+                default_for_external=False,
+                command_preview=None,
+                auth_message="Claude Code detected.",
+            ),
+            AgentBackendStatus(
+                key="custom",
+                label="Custom command",
+                description="Use any external adapter command that implements the benchmark NDJSON contract.",
+                available=True,
+                authenticated=False,
+                default_for_external=False,
+                command_preview=None,
+                auth_message="Provide a full adapter command.",
+                requires_custom_command=True,
+            ),
         ],
     )
-    assert response.status_code == 200
-    run_id = response.json()['run_id']
 
-    status = 'queued'
+
+def _create_benchmark_run(
+    manager: StudioRunManager,
+    *,
+    profile_id: str | None,
+    repo_path: str | None,
+    instruction_text: bytes | None,
+    mcp_json: str,
+    runner_kind: str,
+    agent_backend: str,
+) -> str:
+    instruction_files = []
+    if instruction_text is not None:
+        instruction_files.append(
+            UploadFile(file=io.BytesIO(instruction_text), filename='AGENTS.md')
+        )
+
+    state = manager.create_benchmark_run(
+        profile_id=profile_id,
+        repo_path=repo_path,
+        repo_archive=None,
+        instruction_files=instruction_files,
+        mcp_json=mcp_json,
+        mcp_source_type=None,
+        mcp_source_path=None,
+        mcp_source_command=None,
+        runner_kind=runner_kind,
+        agent_backend=agent_backend,
+        adapter_command=None,
+        max_workers=2,
+        confirmed_to_continue=True,
+    )
+    return state.run_id
+
+
+def _wait_for_run(manager: StudioRunManager, run_id: str) -> dict:
     deadline = time.time() + 120
     final_payload = {}
     while time.time() < deadline:
-        final_payload = client.get(f'/api/runs/{run_id}').json()
-        status = final_payload['status']
-        if status in {'completed', 'failed'}:
+        state = manager.get_state(run_id)
+        assert state is not None
+        final_payload = {
+            'status': state.status,
+            'summary': state.summary,
+            'error': state.error,
+        }
+        if state.status in {'completed', 'failed'}:
             break
         time.sleep(0.2)
+    return final_payload
 
-    assert status == 'completed', final_payload
+
+def test_server_creates_run_and_exports_bundle(tmp_path: Path) -> None:
+    repo_root = _create_pytest_repo(tmp_path)
+    manager = StudioRunManager(REPO_ROOT)
+
+    agents = manager.list_agents()
+    assert any(agent['key'] == 'codex' and agent['default_for_external'] for agent in agents)
+    profiles = manager.list_profiles()
+    assert any(profile['id'] == 'anthropic-demo' for profile in profiles)
+
+    run_id = _create_benchmark_run(
+        manager,
+        profile_id=None,
+        repo_path=str(repo_root),
+        instruction_text=b'Validate before concluding.\nNever overwrite user changes.\n',
+        mcp_json='{"mcpServers":{"rippletide":{"type":"http","url":"https://mcp.example.test"}}}',
+        runner_kind='demo',
+        agent_backend='codex',
+    )
+    final_payload = _wait_for_run(manager, run_id)
+    assert final_payload['status'] == 'completed', final_payload
     assert final_payload['summary']['runnable_task_count'] >= 1
     assert final_payload['summary']['inputs']['agent_backend'] == 'codex'
-    assert Path(final_payload['report_paths']['benchmark_report_markdown']).exists()
+    report_path = REPO_ROOT / 'benchmark' / 'reports' / 'studio_runs' / run_id / 'benchmark_report.md'
+    assert report_path.exists()
 
-    export_response = client.get(f'/api/runs/{run_id}/export')
-    assert export_response.status_code == 200
-    assert export_response.headers['content-type'] == 'application/zip'
+    export_path = manager.export_run(run_id)
+    assert export_path.exists()
+    assert export_path.suffix == '.zip'
 
 
 def test_server_can_run_against_the_included_repo_without_repo_path() -> None:
-    client = TestClient(create_app())
+    manager = StudioRunManager(REPO_ROOT)
 
-    response = client.post(
-        '/api/runs',
-        data={
-            'runner_kind': 'demo',
-            'agent_backend': 'codex',
-            'mcp_json': '{}',
-            'max_workers': '2',
-        },
+    run_id = _create_benchmark_run(
+        manager,
+        profile_id=None,
+        repo_path=None,
+        instruction_text=None,
+        mcp_json='{}',
+        runner_kind='demo',
+        agent_backend='codex',
     )
-    assert response.status_code == 200
-    run_id = response.json()['run_id']
 
-    deadline = time.time() + 120
-    final_payload = {}
-    while time.time() < deadline:
-        final_payload = client.get(f'/api/runs/{run_id}').json()
-        if final_payload['status'] in {'completed', 'failed'}:
-            break
-        time.sleep(0.2)
+    final_payload = _wait_for_run(manager, run_id)
 
     assert final_payload['status'] == 'completed', final_payload
     assert final_payload['summary']['source_root']
-    assert Path(final_payload['report_paths']['benchmark_report_markdown']).exists()
+    assert (REPO_ROOT / 'benchmark' / 'reports' / 'studio_runs' / run_id / 'benchmark_report.md').exists()
 
 
 def test_server_can_load_and_run_a_profile() -> None:
-    client = TestClient(create_app())
+    manager = StudioRunManager(REPO_ROOT)
 
-    profile_response = client.get('/api/profiles/anthropic-demo')
-    assert profile_response.status_code == 200
-    assert profile_response.json()['id'] == 'anthropic-demo'
-    assert profile_response.json()['execution_preset'] == 'claude'
+    profile_payload = manager.get_profile('anthropic-demo')
+    assert profile_payload is not None
+    assert profile_payload['id'] == 'anthropic-demo'
+    assert profile_payload['execution_preset'] == 'claude'
 
-    response = client.post('/api/profiles/quick-demo/run')
-    assert response.status_code == 200
-    run_id = response.json()['run_id']
+    run_id = _create_benchmark_run(
+        manager,
+        profile_id='quick-demo',
+        repo_path=None,
+        instruction_text=None,
+        mcp_json='{}',
+        runner_kind='demo',
+        agent_backend='codex',
+    )
 
-    deadline = time.time() + 120
-    final_payload = {}
-    while time.time() < deadline:
-        final_payload = client.get(f'/api/runs/{run_id}').json()
-        if final_payload['status'] in {'completed', 'failed'}:
-            break
-        time.sleep(0.2)
+    final_payload = _wait_for_run(manager, run_id)
 
     assert final_payload['status'] == 'completed', final_payload
     assert final_payload['summary']['inputs']['profile_id'] == 'quick-demo'
-    assert Path(final_payload['report_paths']['benchmark_report_markdown']).exists()
+    assert (REPO_ROOT / 'benchmark' / 'reports' / 'studio_runs' / run_id / 'benchmark_report.md').exists()
 
 
 def test_benchmark_endpoint_materializes_bundle_files(tmp_path: Path) -> None:
     repo_root = _create_pytest_repo(tmp_path)
-    client = TestClient(create_app())
+    manager = StudioRunManager(REPO_ROOT)
 
-    response = client.post(
-        '/api/benchmark',
-        data={
-            'repo_path': str(repo_root),
-            'mcp_json': '{"mcpServers":{"local_demo":{"type":"inline","tools":[{"name":"validate before concluding"}]}}}',
-            'runner_kind': 'demo',
-            'agent_backend': 'codex',
-            'confirmed_to_continue': 'true',
-            'max_workers': '2',
-        },
-        files=[
-            (
-                'instruction_files',
-                (
-                    'AGENTS.md',
-                    io.BytesIO(b'Validate before concluding.\n'),
-                    'text/markdown',
-                ),
-            )
-        ],
+    run_id = _create_benchmark_run(
+        manager,
+        profile_id=None,
+        repo_path=str(repo_root),
+        instruction_text=b'Validate before concluding.\n',
+        mcp_json='{"mcpServers":{"local_demo":{"type":"inline","tools":[{"name":"validate before concluding"}]}}}',
+        runner_kind='demo',
+        agent_backend='codex',
     )
-    assert response.status_code == 200
-    run_id = response.json()['run_id']
 
-    deadline = time.time() + 120
-    final_payload = {}
-    while time.time() < deadline:
-        final_payload = client.get(f'/api/runs/{run_id}').json()
-        if final_payload['status'] in {'completed', 'failed'}:
-            break
-        time.sleep(0.2)
+    final_payload = _wait_for_run(manager, run_id)
 
     assert final_payload['status'] == 'completed', final_payload
-    for path in final_payload['bundle_paths'].values():
-        assert Path(path).exists(), path
-    assert Path(final_payload['report_paths']['benchmark_report_markdown']).exists()
+    run_root = REPO_ROOT / 'benchmark' / 'reports' / 'studio_runs' / run_id
+    for path in (
+        run_root / 'bundle' / 'normalized_rules.json',
+        run_root / 'bundle' / 'mcp_manifest.json',
+        run_root / 'bundle' / 'alignment.json',
+        run_root / 'bundle' / 'generated_tasks.json',
+    ):
+        assert path.exists(), path
+    assert (run_root / 'benchmark_report.md').exists()

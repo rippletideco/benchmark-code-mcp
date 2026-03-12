@@ -16,3 +16,5 @@ benchmark/reports/runs/*
 benchmark/reports/aggregate/*
 !benchmark/reports/aggregate/.gitkeep
 tmp
+
+benchmark/reports/*/**
