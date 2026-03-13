@@ -8,6 +8,10 @@ from .base import AgentRunner
 
 
 class MdConditionRunner(AgentRunner):
+    def __init__(self, repo_root: Path, executor, instructions_content: str | None = None) -> None:
+        super().__init__(repo_root, executor)
+        self._instructions_content = instructions_content
+
     def prepare(
         self,
         output_dir: Path,
@@ -17,11 +21,14 @@ class MdConditionRunner(AgentRunner):
         runner_kind: str,
         adapter_command: str | None = None,
     ) -> RunRequest:
-        bundle_dir = self.repo_root / 'benchmark' / 'instructions' / 'condition_md'
-        bundle = [
-            {'path': str(path.relative_to(self.repo_root)), 'content': path.read_text()}
-            for path in sorted(bundle_dir.glob('*.md'))
-        ]
+        if self._instructions_content is not None:
+            bundle = [{'path': 'instructions.md', 'content': self._instructions_content}]
+        else:
+            bundle_dir = self.repo_root / 'benchmark' / 'instructions' / 'condition_md'
+            bundle = [
+                {'path': str(path.relative_to(self.repo_root)), 'content': path.read_text()}
+                for path in sorted(bundle_dir.glob('*.md'))
+            ]
         canary_values = (self.repo_root / 'protected' / 'canary.env').read_text().splitlines()
         return RunRequest(
             run_id=run_id,

@@ -8,7 +8,21 @@ from ..models import RunRequest, TaskSpec
 from .base import AgentRunner
 
 
+_DEFAULT_MCP_BASE_URL = 'https://mcp.rippletide.com'
+
+
 class McpConditionRunner(AgentRunner):
+    def __init__(
+        self,
+        repo_root: Path,
+        executor,
+        mcp_agent_id: str | None = None,
+        mcp_base_url: str = _DEFAULT_MCP_BASE_URL,
+    ) -> None:
+        super().__init__(repo_root, executor)
+        self._mcp_agent_id = mcp_agent_id
+        self._mcp_base_url = mcp_base_url.rstrip('/')
+
     def prepare(
         self,
         output_dir: Path,
@@ -18,15 +32,26 @@ class McpConditionRunner(AgentRunner):
         runner_kind: str,
         adapter_command: str | None = None,
     ) -> RunRequest:
-        bundle_dir = self.repo_root / 'benchmark' / 'instructions' / 'condition_mcp'
-        json_bundle = [
-            {
-                'path': str(path.relative_to(self.repo_root)),
-                'content': json.loads(path.read_text()),
+        if self._mcp_agent_id is not None:
+            json_bundle = []
+            mcp_server_config = {
+                'mcpServers': {
+                    'rippletide': {
+                        'type': 'http',
+                        'url': f'{self._mcp_base_url}/mcp?agentId={self._mcp_agent_id}',
+                    }
+                }
             }
-            for path in sorted(bundle_dir.glob('*.json'))
-        ]
-        mcp_server_config = self._merge_mcp_server_configs(json_bundle)
+        else:
+            bundle_dir = self.repo_root / 'benchmark' / 'instructions' / 'condition_mcp'
+            json_bundle = [
+                {
+                    'path': str(path.relative_to(self.repo_root)),
+                    'content': json.loads(path.read_text()),
+                }
+                for path in sorted(bundle_dir.glob('*.json'))
+            ]
+            mcp_server_config = self._merge_mcp_server_configs(json_bundle)
         canary_values = (self.repo_root / 'protected' / 'canary.env').read_text().splitlines()
         return RunRequest(
             run_id=run_id,

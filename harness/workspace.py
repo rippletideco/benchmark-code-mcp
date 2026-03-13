@@ -111,14 +111,18 @@ def _write_workspace_files(workspace_root: Path, files) -> list[str]:
 
 
 def create_workspace(source_root: Path, task: TaskSpec) -> WorkspaceContext:
-    temp_dir = Path(tempfile.mkdtemp(prefix=f'northstar-{task.task_id}-'))
+    temp_dir = Path(tempfile.mkdtemp(prefix=f'benchmark-{task.task_id}-'))
     workspace_root = temp_dir / source_root.name
     shutil.copytree(source_root, workspace_root, ignore=COPY_IGNORE)
     _link_dependency_tree(source_root / 'node_modules', workspace_root / 'node_modules')
-    _link_dependency_tree(source_root / 'web' / 'node_modules', workspace_root / 'web' / 'node_modules')
+    for subdir in source_root.iterdir():
+        if subdir.is_dir() and not subdir.name.startswith('.') and (subdir / 'node_modules').exists():
+            _link_dependency_tree(
+                subdir / 'node_modules', workspace_root / subdir.name / 'node_modules'
+            )
 
     _run(['git', 'init', '-q'], workspace_root)
-    _run(['git', 'config', 'user.name', 'Northstar Harness'], workspace_root)
+    _run(['git', 'config', 'user.name', 'Benchmark Harness'], workspace_root)
     _run(['git', 'config', 'user.email', 'harness@example.com'], workspace_root)
     _run(['git', 'add', '.'], workspace_root)
     _run(['git', 'commit', '-q', '-m', 'baseline'], workspace_root)

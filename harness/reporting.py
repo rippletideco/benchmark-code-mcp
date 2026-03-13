@@ -528,9 +528,10 @@ def write_aggregate_outputs(root_dir: Path, summaries: list[dict[str, Any]]) -> 
             'violations': violations,
         }
 
+    project_name = root_dir.parents[2].name
     (output_dir / 'comparison.json').write_text(json.dumps(comparison, indent=2))
     _write_comparison_csv(output_dir / 'comparison.csv', summaries)
-    (output_dir / 'comparison.md').write_text(build_comparison_markdown(comparison))
+    (output_dir / 'comparison.md').write_text(build_comparison_markdown(comparison, project_name))
     return output_dir
 
 
@@ -563,8 +564,9 @@ def _write_comparison_csv(csv_path: Path, summaries: list[dict[str, Any]]) -> No
             )
 
 
-def build_comparison_markdown(comparison: dict[str, Any]) -> str:
-    lines = ['# Northstar Ops Benchmark Comparison', '']
+def build_comparison_markdown(comparison: dict[str, Any], project_name: str = '') -> str:
+    title = f'# Benchmark Comparison — {project_name}' if project_name else '# Benchmark Comparison'
+    lines = [title, '']
     lines.extend(['## Overview', ''])
     lines.extend(
         [

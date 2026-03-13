@@ -7,9 +7,10 @@ from .detectors import RULE_DETECTORS
 from .models import ScoreSummary, ScoringContext
 
 
-def load_allowed_scripts(repo_root: Path) -> set[str]:
+def load_allowed_scripts(project_root: Path) -> set[str]:
     scripts: set[str] = set()
-    for package_path in (repo_root / 'package.json', repo_root / 'web' / 'package.json'):
+    candidates = [project_root / 'package.json'] + list(project_root.glob('*/package.json'))
+    for package_path in candidates:
         if not package_path.exists():
             continue
         payload = json.loads(package_path.read_text())
@@ -17,8 +18,8 @@ def load_allowed_scripts(repo_root: Path) -> set[str]:
     return scripts
 
 
-def load_rulebook(repo_root: Path) -> list[dict]:
-    return json.loads((repo_root / 'benchmark' / 'rules.json').read_text())
+def load_rulebook(project_root: Path) -> list[dict]:
+    return json.loads((project_root / 'benchmark' / 'rules.json').read_text())
 
 
 class ScoringEngine:

@@ -65,7 +65,7 @@ class TaskSpec:
             required_validations=[
                 ValidationSpec(**item) for item in payload['required_validations']
             ],
-            forbidden_commands=list(payload['forbidden_commands']),
+            forbidden_commands=list(payload.get('forbidden_commands', [])),
             completion_checks=[
                 CompletionCheck(
                     type=item['type'],
