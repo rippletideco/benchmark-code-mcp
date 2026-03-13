@@ -1,4 +1,4 @@
-# Northstar Ops Benchmark Repository
+# Northstar Ops — Coding Agent Evaluation
 
 ## How The Benchmark Works
 
@@ -211,7 +211,94 @@ The primary Studio surface currently exposes:
 
 The backend still reports full agent availability via `GET /api/agents`.
 
-## Running From The CLI
+## Running From The CLI (External Repos)
+
+The CLI can benchmark any public or private GitHub repo — no Studio required.
+
+### 1. Generate tasks from a repo
+
+```bash
+GITHUB_TOKEN=ghp_xxx \
+.venv/bin/python -m harness.cli generate-tasks \
+  --repo owner/repo \
+  --project-root my-benchmark \
+  --max-tasks 10 \
+  --generate-rules \
+  --num-rules 40
+```
+
+- Clones the repo into `~/projects/my-benchmark/`
+- Fetches merged PRs, skips maintenance-only commits (`chore`, `docs`, `ci`, `build`, `style`, `release`, `bump`, `revert` — both `chore:` and `chore(scope):` forms)
+- For each qualifying PR: creates a reverse-diff patch + task JSON
+- `--generate-rules`: calls `claude -p` to generate N coding rules tailored to that repo's language, test framework, and file structure; written to `benchmark/instructions/condition_md/instructions.md`
+
+### 2. List tasks
+
+```bash
+.venv/bin/python -m harness.cli list-tasks \
+  --project-root ~/projects/my-benchmark
+```
+
+### 3. Dry run (no API cost)
+
+```bash
+.venv/bin/python -m harness.cli run-task \
+  --project-root ~/projects/my-benchmark \
+  --task <task_id> \
+  --condition condition_md \
+  --runner demo
+```
+
+### 4. Real run
+
+```bash
+# MD condition — rules injected inline
+.venv/bin/python -m harness.cli run-task \
+  --project-root ~/projects/my-benchmark \
+  --task <task_id> \
+  --condition condition_md \
+  --runner claude \
+  --mcp-agent-id fan@rippletide.com \
+  --auto-sync-mcp
+
+# MCP condition — agent must call recall to fetch rules
+.venv/bin/python -m harness.cli run-task \
+  --project-root ~/projects/my-benchmark \
+  --task <task_id> \
+  --condition condition_mcp \
+  --runner claude \
+  --mcp-agent-id fan@rippletide.com
+```
+
+Use `--mcp-base-url https://coding-agent-staging.up.railway.app` to target the staging MCP server instead of production.
+
+### 5. Run all tasks
+
+```bash
+.venv/bin/python -m harness.cli run-all \
+  --project-root ~/projects/my-benchmark \
+  --conditions condition_md condition_mcp \
+  --runner claude \
+  --mcp-agent-id fan@rippletide.com \
+  --auto-sync-mcp \
+  --max-workers 2
+```
+
+### 6. Compare results
+
+```bash
+.venv/bin/python -m harness.cli compare \
+  --runs-dir ~/projects/my-benchmark/benchmark/reports/runs \
+  --project-root ~/projects/my-benchmark
+
+cat ~/projects/my-benchmark/benchmark/reports/aggregate/*/comparison.md
+```
+
+See `docs/evaluation_walkthrough.md` for a full end-to-end walkthrough.
+
+---
+
+## Running From The CLI (Built-in Tasks)
 
 ### Start The Studio
 
@@ -352,6 +439,7 @@ In that case:
 
 ## Useful Files
 
+- end-to-end walkthrough: `docs/evaluation_walkthrough.md`
 - architecture: `docs/architecture.md`
 - integration details: `docs/integration.md`
 - scoring: `docs/scoring.md`
